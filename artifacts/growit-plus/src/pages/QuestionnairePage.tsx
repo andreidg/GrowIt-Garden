@@ -46,7 +46,7 @@ const QUICK_PRESETS = [
   { label: "Large 16×12", ft: { len: 16, wid: 12 } },
 ];
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 const PRIMARY_ID   = "area-primary";
 
 type PlantFilter = "all" | "vegetables" | "herbs" | "flowers";
@@ -138,6 +138,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
 
   // ── Step 3 ───────────────────────────────────────────────────────────────
   const [selectedPlantIds, setSelectedPlantIds] = useState<string[]>([]);
+
   const [customPlants,     setCustomPlants]     = useState<CustomPlant[]>([]);
   const [showCustomForm,   setShowCustomForm]   = useState(false);
   const [customName,       setCustomName]       = useState("");
@@ -145,6 +146,15 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
   const [customNotes,      setCustomNotes]      = useState("");
   const [plantFilter,      setPlantFilter]      = useState<PlantFilter>("all");
   const [plantError,       setPlantError]       = useState(false);
+
+  // ── Step 4 ───────────────────────────────────────────────────────────────
+  const [alertFrost,    setAlertFrost]    = useState(true);
+  const [alertHail,     setAlertHail]     = useState(true);
+  const [alertPlanting, setAlertPlanting] = useState(false);
+  const [alertWatering, setAlertWatering] = useState(true);
+  const [notifHour,     setNotifHour]     = useState(7);
+  const [notifMinute,   setNotifMinute]   = useState(0);
+  const [notifAmPm,     setNotifAmPm]     = useState<"AM" | "PM">("AM");
 
   const cfg = UNIT_CONFIG[unit];
 
@@ -289,7 +299,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 flex gap-1.5">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${
                 i < step ? "bg-forest/40" : i === step ? "bg-forest" : "bg-cream-dark"
               }`} />
@@ -308,7 +318,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
           <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div>
               <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
-                Step 1 of 3
+                Step 1 of 4
               </p>
               <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
                 Where is your garden?
@@ -368,7 +378,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
           <div className="px-6 py-8 flex flex-col gap-5 animate-in fade-in slide-in-from-right-4 duration-300">
             <div>
               <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
-                Step 2 of 3
+                Step 2 of 4
               </p>
               <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
                 Your garden spaces
@@ -568,7 +578,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
           <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div>
               <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
-                Step 3 of 3
+                Step 3 of 4
               </p>
               <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
                 Pick your plants
@@ -717,9 +727,117 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
             )}
 
             <div className="pt-2 pb-6">
-              <button onClick={handleSubmit} data-testid="btn-generate"
+              <button
+                onClick={() => {
+                  if (totalSelected === 0) { setPlantError(true); return; }
+                  setPlantError(false);
+                  setStep(4);
+                }}
+                data-testid="btn-next-step"
                 className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
-                Generate My Plan
+                Continue
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: Set your alerts ────────────────────────────────────── */}
+        {step === 4 && (
+          <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div>
+              <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
+                Step 4 of 4
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
+                Set your alerts
+              </h2>
+              <p className="text-sm text-forest/60 leading-relaxed">
+                We'll only notify you when it matters.
+              </p>
+            </div>
+
+            {/* Alert toggles */}
+            <div className="flex flex-col divide-y divide-cream-dark/60 bg-cream-light border border-cream-dark rounded-2xl overflow-hidden">
+              {[
+                { label: "Frost Warnings",     desc: "Alerts when temps drop below 2°C",    on: alertFrost,    set: setAlertFrost },
+                { label: "Hail Alerts",        desc: "Summer storm warnings for your area",  on: alertHail,     set: setAlertHail },
+                { label: "Planting Reminders", desc: "Weekly tips based on your calendar",   on: alertPlanting, set: setAlertPlanting },
+                { label: "Watering Days",      desc: "Optimal days based on rainfall",       on: alertWatering, set: setAlertWatering },
+              ].map(({ label, desc, on, set }) => (
+                <div key={label} className="flex items-center justify-between px-5 py-4 gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-forest">{label}</p>
+                    <p className="text-xs text-forest/50 mt-0.5">{desc}</p>
+                  </div>
+                  <button
+                    onClick={() => set(!on)}
+                    className={`relative w-12 h-6 rounded-full shrink-0 transition-colors duration-200 ${on ? "bg-forest" : "bg-forest/20"}`}
+                  >
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${on ? "translate-x-6" : "translate-x-0.5"}`} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Preferred notification time */}
+            <div>
+              <p className="text-sm font-semibold text-forest mb-3">Preferred notification time</p>
+              <div className="bg-white border border-cream-dark rounded-2xl px-6 py-4">
+                <div className="flex items-center justify-center gap-3">
+                  {/* Hour */}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <button onClick={() => setNotifHour(h => h === 12 ? 1 : h + 1)}
+                      className="text-forest/40 hover:text-forest transition-colors p-1">
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <span className="text-3xl font-semibold text-forest w-10 text-center tabular-nums">
+                      {String(notifHour).padStart(2, "0")}
+                    </span>
+                    <button onClick={() => setNotifHour(h => h === 1 ? 12 : h - 1)}
+                      className="text-forest/40 hover:text-forest transition-colors p-1">
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <span className="text-3xl font-semibold text-forest mb-0.5">:</span>
+
+                  {/* Minute */}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <button onClick={() => setNotifMinute(m => (m + 15) % 60)}
+                      className="text-forest/40 hover:text-forest transition-colors p-1">
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <span className="text-3xl font-semibold text-forest w-10 text-center tabular-nums">
+                      {String(notifMinute).padStart(2, "0")}
+                    </span>
+                    <button onClick={() => setNotifMinute(m => m === 0 ? 45 : m - 15)}
+                      className="text-forest/40 hover:text-forest transition-colors p-1">
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* AM/PM */}
+                  <div className="flex flex-col items-center gap-1.5 ml-1">
+                    <button onClick={() => setNotifAmPm(v => v === "AM" ? "PM" : "AM")}
+                      className="text-forest/40 hover:text-forest transition-colors p-1">
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <span className="text-2xl font-semibold text-forest w-10 text-center">
+                      {notifAmPm}
+                    </span>
+                    <button onClick={() => setNotifAmPm(v => v === "AM" ? "PM" : "AM")}
+                      className="text-forest/40 hover:text-forest transition-colors p-1">
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 pb-6">
+              <button onClick={handleSubmit} data-testid="btn-generate"
+                className="w-full bg-terracotta text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
+                Start Growing →
               </button>
             </div>
           </div>
