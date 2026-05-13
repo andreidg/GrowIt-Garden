@@ -401,12 +401,17 @@ function selectPlants(profile: GardenProfile): SelectionResult {
     `The schedule timing shown is approximate — research the best planting window for your specific variety.`
   );
 
+  // DEBUG
+  console.log("[GrowIt] selectPlants called with selectedPlantIds:", profile.selectedPlantIds);
+
   if (profile.selectedPlantIds && profile.selectedPlantIds.length > 0) {
     const { plants, cautionNotes } = selectFromUserList(profile, customItems);
+    console.log("[GrowIt] selectFromUserList returned plants:", plants.map(p => p.id));
     return { plants, cautionNotes: [...cautionNotes, ...customCautions] };
   }
 
   // Smart deterministic selection
+  console.log("[GrowIt] Falling back to smartSelectPlants");
   const { plants, cautionNotes } = smartSelectPlants(profile);
   return {
     plants: [...plants, ...customItems],
