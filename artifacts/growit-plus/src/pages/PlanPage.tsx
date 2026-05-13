@@ -112,7 +112,12 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
               Your Garden Map
             </h2>
             <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-              <GardenGrid grid={grid} lengthFt={profile.lengthFt} widthFt={profile.widthFt} />
+              <GardenGrid
+                grid={grid}
+                lengthFt={profile.lengthFt}
+                widthFt={profile.widthFt}
+                unitPreference={profile.unitPreference}
+              />
             </div>
           </div>
 
