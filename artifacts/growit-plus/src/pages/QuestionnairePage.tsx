@@ -126,11 +126,11 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
   const [unit, setUnit] = useState<UnitSystem>("imperial");
   const [areas, setAreas] = useState<GardenArea[]>([{
     id: PRIMARY_ID, name: "My Garden",
-    lengthFt: 10, widthFt: 8,
+    lengthFt: 6, widthFt: 6,
     sunlight: "Full Sun", soilType: "Raised Bed",
   }]);
   const [areaInputs, setAreaInputs] = useState<Record<string, { len: string; wid: string }>>({
-    [PRIMARY_ID]: { len: "10", wid: "8" },
+    [PRIMARY_ID]: { len: "6", wid: "6" },
   });
   const [capWarnings,  setCapWarnings]  = useState<Record<string, boolean>>({});
   const [areaConfs,    setAreaConfs]    = useState<Record<string, { sunlight: Confidence | null; soil: Confidence | null }>>({});
@@ -194,7 +194,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
     const newArea: GardenArea = {
       id,
       name:     defaultNames[n] ?? `Garden Area ${n}`,
-      lengthFt: 8, widthFt: 6,
+      lengthFt: 6, widthFt: 6,
       sunlight: "Full Sun", soilType: "Raised Bed",
     };
     setAreas(prev => [...prev, newArea]);
