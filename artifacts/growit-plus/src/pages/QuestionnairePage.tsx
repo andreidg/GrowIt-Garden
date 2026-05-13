@@ -3,6 +3,7 @@ import { REGION_KEYS } from "@/data/locations";
 import type { GardenProfile, SunlightLevel, SoilType, PlantPreference, UnitSystem } from "@/types/garden";
 import { UNIT_CONFIG, capToMax, toInternalFt } from "@/utils/units";
 import { ArrowLeft, Sun, CloudSun, Cloud, ChevronDown, ChevronUp } from "lucide-react";
+import PhotoAnalyzer, { ConfidenceBadge, type Confidence } from "@/components/PhotoAnalyzer";
 
 interface QuestionnairePageProps {
   onNext: (profile: GardenProfile) => void;
@@ -45,6 +46,13 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
   const [sunlight, setSunlight]             = useState<SunlightLevel>("Full Sun");
   const [soilType, setSoilType]             = useState<SoilType>("Raised Bed");
   const [plantPref, setPlantPref]           = useState<PlantPreference>("Vegetables + Herbs + Flowers");
+  const [sunlightConf, setSunlightConf]     = useState<Confidence | null>(null);
+  const [soilConf, setSoilConf]             = useState<Confidence | null>(null);
+
+  const handlePhotoResult = (r: { sunlight: SunlightLevel; sunlightConfidence: Confidence; soilType: SoilType; soilTypeConfidence: Confidence }) => {
+    setSunlight(r.sunlight);       setSunlightConf(r.sunlightConfidence);
+    setSoilType(r.soilType);       setSoilConf(r.soilTypeConfidence);
+  };
 
   const cfg = UNIT_CONFIG[unit];
   const TOTAL_STEPS = 4;
@@ -284,18 +292,26 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
               </p>
             </div>
 
+            {/* Optional photo scan */}
+            <PhotoAnalyzer onResult={handlePhotoResult} />
+
             {/* Sunlight */}
             <div className="flex flex-col gap-3">
-              <label className="text-sm font-semibold text-forest/70 uppercase tracking-wider">
-                Sun Exposure
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-forest/70 uppercase tracking-wider">
+                  Sun Exposure
+                </label>
+                {sunlightConf && (
+                  <ConfidenceBadge confidence={sunlightConf} />
+                )}
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 {SUNLIGHT_OPTIONS.map(({ id, icon: Icon, label, sub }) => {
                   const active = sunlight === id;
                   return (
                     <button
                       key={id}
-                      onClick={() => setSunlight(id)}
+                      onClick={() => { setSunlight(id); setSunlightConf(null); }}
                       className={`flex flex-col items-center gap-2 py-4 px-1 rounded-2xl border transition-all ${
                         active
                           ? "bg-forest border-forest text-cream shadow-md"
@@ -320,9 +336,14 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
 
             {/* Soil type */}
             <div className="flex flex-col gap-3">
-              <label className="text-sm font-semibold text-forest/70 uppercase tracking-wider">
-                Soil Setup
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-forest/70 uppercase tracking-wider">
+                  Soil Setup
+                </label>
+                {soilConf && (
+                  <ConfidenceBadge confidence={soilConf} />
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 {SOIL_OPTIONS.map(soil => {
                   const active = soilType === soil;
@@ -330,7 +351,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                   return (
                     <button
                       key={soil}
-                      onClick={() => setSoilType(soil)}
+                      onClick={() => { setSoilType(soil); setSoilConf(null); }}
                       className={`py-4 px-4 rounded-2xl border text-left transition-all ${
                         active
                           ? "bg-forest border-forest text-cream shadow-md"
