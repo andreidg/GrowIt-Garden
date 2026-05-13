@@ -1,6 +1,7 @@
+import { useState } from "react";
 import type { WeeklyScheduleItem, PlantAction, ActionType } from "@/types/garden";
 import {
-  Home, ShoppingCart, Sprout, Leaf, Wrench, Sparkles, Scissors, Droplets,
+  Home, ShoppingCart, Sprout, Leaf, Wrench, Sparkles, Scissors, Droplets, ChevronDown,
 } from "lucide-react";
 
 interface WeeklyScheduleProps {
@@ -8,11 +9,12 @@ interface WeeklyScheduleProps {
 }
 
 // ─── Action type config ────────────────────────────────────────────────────
+
 type ActionCfg = {
   label: string;
-  icon: React.ElementType;
-  cell: string;   // cell bg+border+text (active week variant handled separately)
-  badge: string;  // pill badge
+  icon:  React.ElementType;
+  cell:  string;
+  badge: string;
 };
 
 const ACTION_CFG: Record<ActionType, ActionCfg> = {
@@ -60,13 +62,49 @@ const ACTION_CFG: Record<ActionType, ActionCfg> = {
   },
 };
 
-// ─── Component ─────────────────────────────────────────────────────────────
+// ─── Action type icon strip (shown in collapsed row) ──────────────────────
+
+function ActionTypeIcons({ actions }: { actions: PlantAction[] }) {
+  const types = [...new Set(actions.map(a => a.actionType))];
+  return (
+    <div className="flex items-center gap-1">
+      {types.slice(0, 4).map(type => {
+        const Icon = ACTION_CFG[type].icon;
+        return (
+          <div key={type} className={`w-5 h-5 rounded-md flex items-center justify-center ${ACTION_CFG[type].badge}`}>
+            <Icon className="w-3 h-3" />
+          </div>
+        );
+      })}
+      {types.length > 4 && (
+        <span className="text-[10px] text-forest/40 font-medium">+{types.length - 4}</span>
+      )}
+    </div>
+  );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────
+
 export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Find index of current / first future week so we can render a "you are here" marker
   const currentIdx = weeks.findIndex(w => w.isCurrent);
+
+  // By default only the current week (or first action week) is expanded
+  const defaultOpen = new Set<number>(
+    currentIdx >= 0 ? [currentIdx] : weeks.findIndex(w => w.hasActions) >= 0
+      ? [weeks.findIndex(w => w.hasActions)]
+      : []
+  );
+  const [openWeeks, setOpenWeeks] = useState<Set<number>>(defaultOpen);
+
+  const toggle = (i: number) =>
+    setOpenWeeks(prev => {
+      const next = new Set(prev);
+      next.has(i) ? next.delete(i) : next.add(i);
+      return next;
+    });
 
   return (
     <div className="relative" data-testid="weekly-schedule">
@@ -77,8 +115,8 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
         {weeks.map((week, i) => {
           const weekStart = new Date(week.weekStartDate);
           const isPast    = weekStart < today && !week.isCurrent;
+          const isOpen    = openWeeks.has(i);
 
-          // Skip past quiet weeks — no value showing them
           if (isPast && !week.hasActions) return null;
 
           return (
@@ -96,20 +134,18 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
                 aria-hidden
               />
 
-              {/* ── Quiet week — compact row ── */}
+              {/* ── Quiet week ── */}
               {!week.isCurrent && !week.hasActions && (
-                <div className="flex items-center gap-3 py-3 border-b border-cream-dark/40 print:border print:rounded-xl print:px-4">
+                <div className="flex items-center gap-3 py-2.5 border-b border-cream-dark/40">
                   <Droplets className="w-3.5 h-3.5 text-forest/25 shrink-0" />
                   <span className="text-xs font-semibold text-forest/40 w-[90px] shrink-0">
                     {week.weekLabel}
                   </span>
-                  <span className="text-xs text-forest/35 italic">
-                    No actions — water and watch! 💧
-                  </span>
+                  <span className="text-xs text-forest/35 italic">Water and watch</span>
                 </div>
               )}
 
-              {/* ── Active week card ── */}
+              {/* ── Action week — collapsible ── */}
               {(week.isCurrent || week.hasActions) && (
                 <div
                   className={[
@@ -121,19 +157,18 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
                         : "bg-cream-light border-cream-dark shadow-sm",
                   ].join(" ")}
                 >
-                  {/* Card header */}
-                  <div
+                  {/* Clickable header row */}
+                  <button
+                    onClick={() => toggle(i)}
                     className={[
-                      "flex items-center justify-between px-4 py-3 border-b",
+                      "w-full flex items-center justify-between px-4 py-3 border-b text-left",
                       week.isCurrent
                         ? "border-white/15 bg-forest"
                         : "border-cream-dark bg-cream-dark/30",
                     ].join(" ")}
                   >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-sm font-bold ${week.isCurrent ? "text-cream" : "text-forest"}`}
-                      >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className={`text-sm font-bold shrink-0 ${week.isCurrent ? "text-cream" : "text-forest"}`}>
                         {week.weekLabel}
                       </span>
                       {isPast && (
@@ -141,44 +176,52 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
                           Past
                         </span>
                       )}
-                    </div>
-                    <div className="flex items-center gap-2">
                       {week.isCurrent && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-gold text-forest px-2.5 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-gold text-forest px-2.5 py-0.5 rounded-full shrink-0">
                           This Week
                         </span>
                       )}
-                      {week.hasActions && (
-                        <span
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                            week.isCurrent ? "bg-white/15 text-cream/80" : "bg-cream-dark text-forest/60"
-                          }`}
-                        >
+                      {/* Task count badge */}
+                      {week.hasActions && !isOpen && (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                          week.isCurrent ? "bg-white/15 text-cream/80" : "bg-cream-dark text-forest/60"
+                        }`}>
                           {week.actions.length} task{week.actions.length !== 1 ? "s" : ""}
                         </span>
                       )}
+                      {/* Collapsed: show action type icon strip */}
+                      {!isOpen && week.hasActions && (
+                        <div className="ml-1">
+                          <ActionTypeIcons actions={week.actions} />
+                        </div>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Action list */}
-                  <div className={`p-4 ${week.hasActions ? "space-y-3" : ""}`}>
-                    {week.hasActions ? (
-                      week.actions.map((action, j) => (
-                        <ActionRow
-                          key={j}
-                          action={action}
-                          isCurrent={week.isCurrent}
-                        />
-                      ))
-                    ) : (
-                      <div className="flex items-center gap-2 py-1">
-                        <Droplets className="w-4 h-4 text-cream/50 shrink-0" />
-                        <p className="text-sm italic text-cream/70">
-                          No actions — water and watch! 💧
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                    {/* Chevron */}
+                    <ChevronDown
+                      className={[
+                        "w-4 h-4 shrink-0 ml-2 transition-transform duration-200",
+                        isOpen ? "rotate-180" : "",
+                        week.isCurrent ? "text-cream/60" : "text-forest/40",
+                      ].join(" ")}
+                    />
+                  </button>
+
+                  {/* Expandable action list */}
+                  {isOpen && (
+                    <div className={`p-4 ${week.hasActions ? "space-y-3" : ""}`}>
+                      {week.hasActions ? (
+                        week.actions.map((action, j) => (
+                          <ActionRow key={j} action={action} isCurrent={week.isCurrent} />
+                        ))
+                      ) : (
+                        <div className="flex items-center gap-2 py-1">
+                          <Droplets className="w-4 h-4 text-cream/50 shrink-0" />
+                          <p className="text-sm italic text-cream/70">No actions — water and watch!</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </li>
@@ -195,88 +238,41 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
           </p>
         </div>
       )}
-
-      {/* Unused var suppression */}
-      {currentIdx === -1 && null}
     </div>
   );
 }
 
 // ─── Single action row ─────────────────────────────────────────────────────
-function ActionRow({
-  action,
-  isCurrent,
-}: {
-  action: PlantAction;
-  isCurrent: boolean;
-}) {
+
+function ActionRow({ action, isCurrent }: { action: PlantAction; isCurrent: boolean }) {
   const cfg  = ACTION_CFG[action.actionType];
   const Icon = cfg.icon;
 
   return (
-    <div
-      className={[
-        "rounded-xl border overflow-hidden",
-        isCurrent ? "border-white/15 bg-white/8" : cfg.cell,
-      ].join(" ")}
-    >
-      {/* Action header */}
-      <div className={`flex items-center gap-2.5 px-3 pt-3 pb-2`}>
-        {/* Icon */}
-        <div
-          className={[
-            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-            isCurrent ? "bg-white/15" : cfg.cell,
-          ].join(" ")}
-        >
+    <div className={["rounded-xl border overflow-hidden", isCurrent ? "border-white/15 bg-white/8" : cfg.cell].join(" ")}>
+      <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
+        <div className={["w-8 h-8 rounded-lg flex items-center justify-center shrink-0", isCurrent ? "bg-white/15" : cfg.cell].join(" ")}>
           <Icon className="w-4 h-4" />
         </div>
-
-        {/* Plant + action label */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {action.plant && (
-              <span className="text-base leading-none">{action.plant.emoji}</span>
-            )}
-            <span
-              className={`font-semibold text-sm leading-tight ${
-                isCurrent ? "text-cream" : "text-forest"
-              }`}
-            >
+            {action.plant && <span className="text-base leading-none">{action.plant.emoji}</span>}
+            <span className={`font-semibold text-sm leading-tight ${isCurrent ? "text-cream" : "text-forest"}`}>
               {action.description}
             </span>
           </div>
-          {/* Action type badge */}
-          <span
-            className={[
-              "inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-1",
-              isCurrent ? "bg-white/15 text-cream/70" : cfg.badge,
-            ].join(" ")}
-          >
+          <span className={["inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded mt-1", isCurrent ? "bg-white/15 text-cream/70" : cfg.badge].join(" ")}>
             {cfg.label}
           </span>
         </div>
       </div>
-
-      {/* Timing note */}
       {action.timingNote && (
-        <p
-          className={`px-3 pb-2 text-xs leading-relaxed ${
-            isCurrent ? "text-cream/65" : "text-forest/60"
-          }`}
-        >
+        <p className={`px-3 pb-2 text-xs leading-relaxed ${isCurrent ? "text-cream/65" : "text-forest/60"}`}>
           {action.timingNote}
         </p>
       )}
-
-      {/* Depth / spacing note */}
       {action.depthNote && (
-        <div
-          className={[
-            "mx-3 mb-3 px-3 py-2 rounded-lg text-xs font-medium flex items-start gap-1.5",
-            isCurrent ? "bg-white/10 text-cream/60" : "bg-cream-dark/40 text-forest/65",
-          ].join(" ")}
-        >
+        <div className={["mx-3 mb-3 px-3 py-2 rounded-lg text-xs font-medium flex items-start gap-1.5", isCurrent ? "bg-white/10 text-cream/60" : "bg-cream-dark/40 text-forest/65"].join(" ")}>
           <span className="text-[10px] mt-0.5 shrink-0">📏</span>
           <span className="leading-relaxed">{action.depthNote}</span>
         </div>
