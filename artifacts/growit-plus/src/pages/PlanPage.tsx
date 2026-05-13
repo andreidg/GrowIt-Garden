@@ -8,6 +8,7 @@ import BottomNav, { type PlanTab } from "@/components/BottomNav";
 import { Download, Share2, RotateCcw, AlertTriangle, MapPin, Calendar, Info, Sparkles, Cpu, Wand2 } from "lucide-react";
 import WeatherRiskCard from "@/components/WeatherRiskCard";
 import WeatherStrip from "@/components/WeatherStrip";
+import PlantTimeline from "@/components/PlantTimeline";
 import { useWeatherRisk } from "@/hooks/useWeatherRisk";
 import { useForecast } from "@/hooks/useForecast";
 import { optimizeGridLayout } from "@/data/plan-generator";
@@ -381,6 +382,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
 
         {/* ── PLANTS TAB ── */}
         <div className={`${activeTab === "plants" ? "block" : "hidden"} px-6 py-6 pb-8 space-y-6`}>
+          <PlantTimeline plants={selectedPlants} schedule={schedule} />
           <div>
             <h2 className="font-serif text-xl font-semibold text-forest mb-1">
               Your Plants
