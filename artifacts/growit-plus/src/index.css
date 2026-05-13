@@ -189,6 +189,8 @@
   .no-print { display: none !important; }
   body { background: white; }
   .print-break { page-break-before: always; }
+  /* Force both tab panels to show when printing — shadcn hides inactive panels by default */
+  [role="tabpanel"] { display: block !important; }
 }
 
 @layer utilities {

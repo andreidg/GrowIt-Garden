@@ -67,8 +67,8 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
             </div>
           </div>
           
-          <div className="bg-card border rounded-2xl p-6 shadow-sm no-print">
-            <h3 className="text-xl font-bold mb-4">Plant Legend</h3>
+          <div className="bg-card border rounded-2xl p-6 shadow-sm">
+            <h3 className="text-xl font-bold mb-4">Plant List</h3>
             <PlantLegend plants={plan.selectedPlants} />
           </div>
         </TabsContent>

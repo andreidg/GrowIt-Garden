@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -27,6 +28,8 @@ interface QuestionnairePageProps {
 }
 
 export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageProps) {
+  const [dimensionCapped, setDimensionCapped] = useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,13 +51,10 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
     if (isNaN(val)) return field.onChange("");
     if (val > 20) {
       val = 20;
+      setDimensionCapped(true);
     }
     field.onChange(val);
   };
-
-  const lengthValue = form.watch("lengthFt");
-  const widthValue = form.watch("widthFt");
-  const showDimensionWarning = lengthValue === 20 || widthValue === 20;
 
   return (
     <div className="w-full max-w-2xl mx-auto animate-in slide-in-from-right-8 duration-300">
@@ -134,9 +134,9 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
             />
           </div>
           
-          {showDimensionWarning && (
-            <p className="text-sm text-secondary font-medium mt-1 bg-secondary/10 p-2 rounded">
-              GrowIt+ supports gardens up to 20ft × 20ft. Dimensions &gt;20ft are capped.
+          {dimensionCapped && (
+            <p className="text-sm text-secondary font-medium mt-1 bg-secondary/10 p-3 rounded" data-testid="text-dimension-cap-notice">
+              GrowIt+ supports gardens up to 20ft x 20ft. Your dimensions have been adjusted.
             </p>
           )}
 
