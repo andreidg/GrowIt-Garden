@@ -3,7 +3,7 @@ import { REGION_KEYS } from "@/data/locations";
 import { VEGETABLES, HERBS, FLOWERS, type PlantItem } from "@/data/plants";
 import type { GardenProfile, SunlightLevel, SoilType, UnitSystem, GardenArea, CustomPlant, PlantType } from "@/types/garden";
 import { UNIT_CONFIG, capToMax, toInternalFt } from "@/utils/units";
-import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X, Camera } from "lucide-react";
 import PhotoAnalyzer, { ConfidenceBadge, type Confidence } from "@/components/PhotoAnalyzer";
 
 interface QuestionnairePageProps {
@@ -22,15 +22,6 @@ const REGION_LABELS: Record<string, string> = {
   Airdrie:    "Airdrie",
   Cochrane:   "Cochrane",
   Okotoks:    "Okotoks",
-};
-
-const REGION_EMOJI: Record<string, string> = {
-  Calgary:    "🌆",
-  Edmonton:   "🏙",
-  "Red Deer": "🌲",
-  Airdrie:    "🌾",
-  Cochrane:   "⛰️",
-  Okotoks:    "🪨",
 };
 
 const SUNLIGHT_OPTIONS: { id: SunlightLevel; emoji: string; label: string; desc: string }[] = [
@@ -58,8 +49,10 @@ const QUICK_PRESETS = [
 const TOTAL_STEPS = 3;
 const PRIMARY_ID   = "area-primary";
 
+type PlantFilter = "all" | "vegetables" | "herbs" | "flowers";
+
 // ---------------------------------------------------------------------------
-// Plant-section sub-component (co-located for simplicity)
+// Plant-section sub-component
 // ---------------------------------------------------------------------------
 
 function PlantSection({
@@ -139,18 +132,19 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
   const [areaInputs, setAreaInputs] = useState<Record<string, { len: string; wid: string }>>({
     [PRIMARY_ID]: { len: "10", wid: "8" },
   });
-  const [capWarnings, setCapWarnings] = useState<Record<string, boolean>>({});
-  const [primaryConf, setPrimaryConf] = useState<{ sunlight: Confidence | null; soil: Confidence | null }>({
-    sunlight: null, soil: null,
-  });
+  const [capWarnings,  setCapWarnings]  = useState<Record<string, boolean>>({});
+  const [areaConfs,    setAreaConfs]    = useState<Record<string, { sunlight: Confidence | null; soil: Confidence | null }>>({});
+  const [showPhotoFor, setShowPhotoFor] = useState<string | null>(null);
 
   // ── Step 3 ───────────────────────────────────────────────────────────────
   const [selectedPlantIds, setSelectedPlantIds] = useState<string[]>([]);
-  const [customPlants, setCustomPlants]         = useState<CustomPlant[]>([]);
-  const [showCustomForm,  setShowCustomForm]    = useState(false);
-  const [customName,      setCustomName]        = useState("");
-  const [customCategory,  setCustomCategory]    = useState<PlantType | "other">("vegetable");
-  const [customNotes,     setCustomNotes]       = useState("");
+  const [customPlants,     setCustomPlants]     = useState<CustomPlant[]>([]);
+  const [showCustomForm,   setShowCustomForm]   = useState(false);
+  const [customName,       setCustomName]       = useState("");
+  const [customCategory,   setCustomCategory]   = useState<PlantType | "other">("vegetable");
+  const [customNotes,      setCustomNotes]      = useState("");
+  const [plantFilter,      setPlantFilter]      = useState<PlantFilter>("all");
+  const [plantError,       setPlantError]       = useState(false);
 
   const cfg = UNIT_CONFIG[unit];
 
@@ -214,32 +208,40 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
     setAreas(prev => prev.filter(a => a.id !== id));
     setAreaInputs(prev => { const n = { ...prev }; delete n[id]; return n; });
     setCapWarnings(prev => { const n = { ...prev }; delete n[id]; return n; });
+    if (showPhotoFor === id) setShowPhotoFor(null);
   };
 
-  const handlePhotoResult = (r: {
+  const handlePhotoResult = (areaId: string, r: {
     sunlight: SunlightLevel;
     sunlightConfidence: Confidence;
     soilType: SoilType;
     soilTypeConfidence: Confidence;
   }) => {
-    setAreas(prev => prev.map((a, i) =>
-      i === 0 ? { ...a, sunlight: r.sunlight, soilType: r.soilType } : a
-    ));
-    setPrimaryConf({ sunlight: r.sunlightConfidence, soil: r.soilTypeConfidence });
+    updateArea(areaId, { sunlight: r.sunlight, soilType: r.soilType });
+    setAreaConfs(prev => ({
+      ...prev,
+      [areaId]: { sunlight: r.sunlightConfidence, soil: r.soilTypeConfidence },
+    }));
+    setShowPhotoFor(null);
   };
 
   // ── Plant selection ───────────────────────────────────────────────────────
-  const togglePlant = (id: string) =>
+  const togglePlant = (id: string) => {
+    setPlantError(false);
     setSelectedPlantIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
 
-  const makeToggleAll = (ids: string[]) => () =>
+  const makeToggleAll = (ids: string[]) => () => {
+    setPlantError(false);
     setSelectedPlantIds(prev => {
       const allOn = ids.every(id => prev.includes(id));
       return allOn ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])];
     });
+  };
 
   const addCustomPlant = () => {
     if (!customName.trim()) return;
+    setPlantError(false);
     setCustomPlants(prev => [...prev, {
       id:       `custom-${Date.now()}`,
       name:     customName.trim(),
@@ -253,6 +255,11 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = () => {
+    if (totalSelected === 0) {
+      setPlantError(true);
+      return;
+    }
+    setPlantError(false);
     const primary = areas[0]!;
     onNext({
       region,
@@ -319,7 +326,6 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                       ? "bg-forest border-forest text-cream"
                       : "bg-cream-light border-cream-dark text-forest"
                   }`}>
-                  <span className="text-lg mb-1">{REGION_EMOJI[key] ?? "📍"}</span>
                   <span className="font-semibold text-sm leading-tight">
                     {REGION_LABELS[key] ?? key}
                   </span>
@@ -384,19 +390,8 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
               ))}
             </div>
 
-            {/* Photo analyzer — pre-fills primary area */}
-            <div className="bg-forest/5 border border-forest/10 rounded-2xl p-4">
-              <p className="text-sm font-semibold text-forest mb-0.5">
-                📷 Scan your main garden
-              </p>
-              <p className="text-xs text-forest/55 mb-3">
-                Upload a photo to auto-detect sunlight and soil type for your first area.
-              </p>
-              <PhotoAnalyzer onResult={handlePhotoResult} />
-            </div>
-
             {/* Area cards */}
-            {areas.map((area, areaIdx) => (
+            {areas.map((area) => (
               <div key={area.id}
                 className="bg-cream-light border border-cream-dark rounded-2xl overflow-hidden shadow-sm">
 
@@ -417,6 +412,22 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                 </div>
 
                 <div className="p-4 flex flex-col gap-5">
+
+                  {/* Photo scanner for this area */}
+                  <div>
+                    <button
+                      onClick={() => setShowPhotoFor(showPhotoFor === area.id ? null : area.id)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-forest/25 text-xs font-medium text-forest/55 hover:border-forest/40 hover:text-forest/75 transition-all bg-cream"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      {showPhotoFor === area.id ? "Close photo scanner" : "Scan a photo to auto-detect sunlight & soil"}
+                    </button>
+                    {showPhotoFor === area.id && (
+                      <div className="mt-3 bg-forest/5 border border-forest/10 rounded-xl p-3">
+                        <PhotoAnalyzer onResult={r => handlePhotoResult(area.id, r)} />
+                      </div>
+                    )}
+                  </div>
 
                   {/* Dimensions */}
                   <div>
@@ -495,9 +506,9 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                         );
                       })}
                     </div>
-                    {areaIdx === 0 && primaryConf.sunlight && (
+                    {areaConfs[area.id]?.sunlight && (
                       <div className="mt-2">
-                        <ConfidenceBadge confidence={primaryConf.sunlight} />
+                        <ConfidenceBadge confidence={areaConfs[area.id]!.sunlight!} />
                       </div>
                     )}
                   </div>
@@ -523,9 +534,9 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                         );
                       })}
                     </div>
-                    {areaIdx === 0 && primaryConf.soil && (
+                    {areaConfs[area.id]?.soil && (
                       <div className="mt-2">
-                        <ConfidenceBadge confidence={primaryConf.soil} />
+                        <ConfidenceBadge confidence={areaConfs[area.id]!.soil!} />
                       </div>
                     )}
                   </div>
@@ -563,106 +574,131 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                 Pick your plants
               </h2>
               <p className="text-sm text-forest/60 leading-relaxed">
-                Select what you'd like to grow. Skipping is fine — we'll choose the best plants for your conditions.
+                Select the plants you want to grow. Only your chosen plants will appear in your plan — you must pick at least one.
               </p>
             </div>
 
-            <PlantSection
-              title="Vegetables" emoji="🥕"
-              plants={VEGETABLES}
-              selectedPlantIds={selectedPlantIds}
-              onToggle={togglePlant}
-              onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
-            />
-            <PlantSection
-              title="Herbs" emoji="🌿"
-              plants={HERBS}
-              selectedPlantIds={selectedPlantIds}
-              onToggle={togglePlant}
-              onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
-            />
-            <PlantSection
-              title="Flowers" emoji="🌸"
-              plants={FLOWERS}
-              selectedPlantIds={selectedPlantIds}
-              onToggle={togglePlant}
-              onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
-            />
-
-            {/* Custom plants */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest">
-                  Custom Plants
-                </h3>
-                {!showCustomForm && (
-                  <button onClick={() => setShowCustomForm(true)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-forest border border-forest/20 px-3 py-1.5 rounded-full hover:bg-forest/5 transition-colors">
-                    <Plus className="w-3 h-3" /> Add custom plant
-                  </button>
-                )}
-              </div>
-
-              <div className="bg-gold/10 border border-gold/25 rounded-xl px-3 py-2.5 mb-3">
-                <p className="text-xs text-forest/65 leading-snug">
-                  Custom plants are not yet validated against Alberta growing conditions. Timing in the schedule will be approximate — verify planting windows for your specific variety.
-                </p>
-              </div>
-
-              {showCustomForm && (
-                <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 mb-3 flex flex-col gap-3">
-                  <input
-                    placeholder="Plant name..."
-                    value={customName}
-                    onChange={e => setCustomName(e.target.value)}
-                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
-                  />
-                  <select
-                    value={customCategory}
-                    onChange={e => setCustomCategory(e.target.value as PlantType | "other")}
-                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest focus:outline-none focus:border-forest/40">
-                    <option value="vegetable">Vegetable</option>
-                    <option value="herb">Herb</option>
-                    <option value="flower">Flower</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <input
-                    placeholder="Notes (optional)..."
-                    value={customNotes}
-                    onChange={e => setCustomNotes(e.target.value)}
-                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={addCustomPlant} disabled={!customName.trim()}
-                      className="flex-1 bg-forest text-cream py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40">
-                      Add
-                    </button>
-                    <button
-                      onClick={() => { setShowCustomForm(false); setCustomName(""); setCustomNotes(""); }}
-                      className="flex-1 border border-cream-dark text-forest/70 py-2.5 rounded-xl text-sm font-medium">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {customPlants.map(cp => (
-                <div key={cp.id}
-                  className="flex items-center gap-3 px-4 py-3 bg-cream-light border border-cream-dark rounded-2xl mb-2">
-                  <span className="text-xl">🌱</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-forest">{cp.name}</p>
-                    <p className="text-[10px] text-forest/50 capitalize">
-                      {cp.category}{cp.notes ? ` · ${cp.notes}` : ""}
-                    </p>
-                  </div>
-                  <button onClick={() => removeCustom(cp.id)}
-                    className="text-forest/30 hover:text-terracotta transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+            {/* Category filter tabs */}
+            <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
+              {(["all", "vegetables", "herbs", "flowers"] as PlantFilter[]).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setPlantFilter(f)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+                    plantFilter === f
+                      ? "bg-white text-forest shadow-sm"
+                      : "text-forest/50 hover:text-forest/70"
+                  }`}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
               ))}
             </div>
+
+            {(plantFilter === "all" || plantFilter === "vegetables") && (
+              <PlantSection
+                title="Vegetables" emoji="🥕"
+                plants={VEGETABLES}
+                selectedPlantIds={selectedPlantIds}
+                onToggle={togglePlant}
+                onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
+              />
+            )}
+            {(plantFilter === "all" || plantFilter === "herbs") && (
+              <PlantSection
+                title="Herbs" emoji="🌿"
+                plants={HERBS}
+                selectedPlantIds={selectedPlantIds}
+                onToggle={togglePlant}
+                onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
+              />
+            )}
+            {(plantFilter === "all" || plantFilter === "flowers") && (
+              <PlantSection
+                title="Flowers" emoji="🌸"
+                plants={FLOWERS}
+                selectedPlantIds={selectedPlantIds}
+                onToggle={togglePlant}
+                onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
+              />
+            )}
+
+            {/* Custom plants */}
+            {(plantFilter === "all") && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest">
+                    Custom Plants
+                  </h3>
+                  {!showCustomForm && (
+                    <button onClick={() => setShowCustomForm(true)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-forest border border-forest/20 px-3 py-1.5 rounded-full hover:bg-forest/5 transition-colors">
+                      <Plus className="w-3 h-3" /> Add custom plant
+                    </button>
+                  )}
+                </div>
+
+                <div className="bg-gold/10 border border-gold/25 rounded-xl px-3 py-2.5 mb-3">
+                  <p className="text-xs text-forest/65 leading-snug">
+                    Custom plants are not yet validated against Alberta growing conditions. Timing in the schedule will be approximate — verify planting windows for your specific variety.
+                  </p>
+                </div>
+
+                {showCustomForm && (
+                  <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 mb-3 flex flex-col gap-3">
+                    <input
+                      placeholder="Plant name..."
+                      value={customName}
+                      onChange={e => setCustomName(e.target.value)}
+                      className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
+                    />
+                    <select
+                      value={customCategory}
+                      onChange={e => setCustomCategory(e.target.value as PlantType | "other")}
+                      className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest focus:outline-none focus:border-forest/40">
+                      <option value="vegetable">Vegetable</option>
+                      <option value="herb">Herb</option>
+                      <option value="flower">Flower</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <input
+                      placeholder="Notes (optional)..."
+                      value={customNotes}
+                      onChange={e => setCustomNotes(e.target.value)}
+                      className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={addCustomPlant} disabled={!customName.trim()}
+                        className="flex-1 bg-forest text-cream py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40">
+                        Add
+                      </button>
+                      <button
+                        onClick={() => { setShowCustomForm(false); setCustomName(""); setCustomNotes(""); }}
+                        className="flex-1 border border-cream-dark text-forest/70 py-2.5 rounded-xl text-sm font-medium">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {customPlants.map(cp => (
+                  <div key={cp.id}
+                    className="flex items-center gap-3 px-4 py-3 bg-cream-light border border-cream-dark rounded-2xl mb-2">
+                    <span className="text-xl">🌱</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-forest">{cp.name}</p>
+                      <p className="text-[10px] text-forest/50 capitalize">
+                        {cp.category}{cp.notes ? ` · ${cp.notes}` : ""}
+                      </p>
+                    </div>
+                    <button onClick={() => removeCustom(cp.id)}
+                      className="text-forest/30 hover:text-terracotta transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {totalSelected > 0 && (
               <div className="bg-forest/5 border border-forest/10 rounded-xl px-4 py-3">
@@ -672,16 +708,19 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
               </div>
             )}
 
-            <div className="pt-2">
+            {plantError && (
+              <div className="bg-terracotta/10 border border-terracotta/25 rounded-xl px-4 py-3">
+                <p className="text-sm font-medium text-terracotta">
+                  Please select at least one plant to continue.
+                </p>
+              </div>
+            )}
+
+            <div className="pt-2 pb-6">
               <button onClick={handleSubmit} data-testid="btn-generate"
                 className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
                 Generate My Plan
               </button>
-              {totalSelected === 0 && (
-                <p className="text-center text-xs text-forest/40 mt-2">
-                  No plants selected — we'll choose the best fit for your garden ✨
-                </p>
-              )}
             </div>
           </div>
         )}

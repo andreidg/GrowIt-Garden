@@ -1,13 +1,14 @@
 import { useState } from "react";
-import type { GeneratedPlan } from "@/types/garden";
+import type { GeneratedPlan, MapCell } from "@/types/garden";
 import { displayDimension } from "@/utils/units";
 import GardenGrid from "@/components/GardenGrid";
 import WeeklySchedule from "@/components/WeeklySchedule";
 import PlantLegend from "@/components/PlantLegend";
 import BottomNav, { type PlanTab } from "@/components/BottomNav";
-import { Download, Share2, RotateCcw, AlertTriangle, MapPin, Calendar, Info, Sparkles, Cpu } from "lucide-react";
+import { Download, Share2, RotateCcw, AlertTriangle, MapPin, Calendar, Info, Sparkles, Cpu, Wand2 } from "lucide-react";
 import WeatherRiskCard from "@/components/WeatherRiskCard";
 import { useWeatherRisk } from "@/hooks/useWeatherRisk";
+import { optimizeGridLayout } from "@/data/plan-generator";
 
 interface PlanPageProps {
   plan: GeneratedPlan;
@@ -17,6 +18,8 @@ interface PlanPageProps {
 export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
   const [activeTab, setActiveTab] = useState<PlanTab>("map");
   const [copied, setCopied]       = useState(false);
+  const [optimizedGrids, setOptimizedGrids] = useState<Record<string, MapCell[][]> | null>(null);
+  const [optimizeMsg, setOptimizeMsg]       = useState<string | null>(null);
 
   const { profile, region, conflicts, selectedPlants, grid, schedule,
           timingExplanation, companionNotes, cautionNotes } = plan;
@@ -34,6 +37,45 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
   const hasConflicts  = conflicts.length > 0;
   const flowerCount   = selectedPlants.filter(p => p.type === "flower").length;
   const highRiskCount = selectedPlants.filter(p => p.riskLevel === "high").length;
+
+  // ── Optimize layout ──────────────────────────────────────────────────────
+  const handleOptimize = () => {
+    const newGrids: Record<string, MapCell[][]> = {};
+    let totalBefore = 0;
+    let totalAfter  = 0;
+
+    const countConflicts = (g: MapCell[][]) =>
+      g.reduce((n, row) => n + row.filter(c => c.hasConflict).length, 0);
+
+    if (multiArea) {
+      for (const ap of plan.areaPlans) {
+        if (ap.selectedPlants.length === 0) continue;
+        totalBefore += countConflicts(ap.grid);
+        const opt = optimizeGridLayout(ap.grid, ap.area.lengthFt, ap.area.widthFt);
+        totalAfter  += countConflicts(opt);
+        newGrids[ap.area.id] = opt;
+      }
+    } else {
+      totalBefore = countConflicts(grid);
+      const opt = optimizeGridLayout(grid, profile.lengthFt, profile.widthFt);
+      totalAfter  = countConflicts(opt);
+      newGrids["primary"] = opt;
+    }
+
+    setOptimizedGrids(newGrids);
+
+    if (totalAfter === 0) {
+      setOptimizeMsg("All conflicts resolved! Your garden layout is now optimized.");
+    } else if (totalAfter < totalBefore) {
+      setOptimizeMsg(`Improved — ${totalAfter} conflict${totalAfter !== 1 ? "s" : ""} remaining. Some plant pairs may not be fully separable in this space.`);
+    } else {
+      setOptimizeMsg("Layout already as optimized as possible for these plants in this space.");
+    }
+  };
+
+  // ── Get the current grid to render ──────────────────────────────────────
+  const getGrid = (areaId: string, fallback: MapCell[][]): MapCell[][] =>
+    optimizedGrids?.[areaId] ?? fallback;
 
   // ── Download plan as Markdown ────────────────────────────────────────────
   const downloadPlan = () => {
@@ -218,15 +260,23 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
           />
 
           {/* Companion conflicts */}
-          {hasConflicts && (
+          {hasConflicts && !optimizeMsg && (
             <div className="bg-terracotta/10 border border-terracotta/20 p-4 rounded-2xl flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-terracotta shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-terracotta text-sm mb-1">Companion Planting Notice</h4>
                 <p className="text-xs text-terracotta/80 leading-relaxed">
                   Adjacent plants with conflicts: {conflicts.join(", ")}. Cells marked ⚠️ are next to an incompatible neighbour.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Optimize result message */}
+          {optimizeMsg && (
+            <div className="bg-forest/8 border border-forest/15 p-4 rounded-2xl flex items-start gap-3">
+              <Wand2 className="w-5 h-5 text-forest/60 shrink-0 mt-0.5" />
+              <p className="text-xs text-forest/75 leading-relaxed">{optimizeMsg}</p>
             </div>
           )}
 
@@ -247,7 +297,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
                   {ap.selectedPlants.length > 0 ? (
                     <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
                       <GardenGrid
-                        grid={ap.grid}
+                        grid={getGrid(ap.area.id, ap.grid)}
                         lengthFt={ap.area.lengthFt}
                         widthFt={ap.area.widthFt}
                         unitPreference={profile.unitPreference}
@@ -268,13 +318,25 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
               </h2>
               <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
                 <GardenGrid
-                  grid={grid}
+                  grid={getGrid("primary", grid)}
                   lengthFt={profile.lengthFt}
                   widthFt={profile.widthFt}
                   unitPreference={profile.unitPreference}
                 />
               </div>
             </div>
+          )}
+
+          {/* Optimize layout button — shown when conflicts exist */}
+          {hasConflicts && (
+            <button
+              onClick={handleOptimize}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-forest/20 bg-forest/5 text-forest text-sm font-semibold hover:bg-forest/10 active:scale-[0.98] transition-all"
+              data-testid="btn-optimize"
+            >
+              <Wand2 className="w-4 h-4" />
+              Optimise Layout
+            </button>
           )}
 
           {/* Caution notes */}
@@ -314,9 +376,10 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
         {/* ── PLANTS TAB ── */}
         <div className={`${activeTab === "plants" ? "block" : "hidden"} px-6 py-6 pb-8 space-y-6`}>
           <div>
-            <h2 className="font-serif text-xl font-semibold text-forest mb-4">
+            <h2 className="font-serif text-xl font-semibold text-forest mb-1">
               Your Plants
             </h2>
+            <p className="text-sm text-forest/50 mb-4">Tap any plant to see more details.</p>
             <PlantLegend plants={selectedPlants} />
           </div>
 

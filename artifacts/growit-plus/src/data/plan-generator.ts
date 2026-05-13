@@ -840,6 +840,93 @@ function buildSchedule(
 }
 
 // ---------------------------------------------------------------------------
+// Grid layout optimizer — hill-climbing conflict minimization
+// ---------------------------------------------------------------------------
+
+export function optimizeGridLayout(
+  grid: MapCell[][],
+  lengthFt: number,
+  widthFt: number,
+): MapCell[][] {
+  const rows = widthFt;
+  const cols = lengthFt;
+
+  // Deep copy
+  const g: MapCell[][] = grid.map(row => row.map(cell => ({ ...cell })));
+
+  function revalidate(g: MapCell[][]): void {
+    for (const row of g) for (const cell of row) { cell.hasConflict = false; }
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = g[r]![c]!;
+        if (!cell.plant) continue;
+        const neighbors: MapCell[] = [
+          r > 0        ? g[r - 1]![c]! : null,
+          r < rows - 1 ? g[r + 1]![c]! : null,
+          c > 0        ? g[r]![c - 1]! : null,
+          c < cols - 1 ? g[r]![c + 1]! : null,
+        ].filter((n): n is MapCell => n !== null);
+        for (const nb of neighbors) {
+          if (nb.plant && areConflicting(cell.plant.name, nb.plant.name)) {
+            cell.hasConflict = true;
+            nb.hasConflict   = true;
+          }
+        }
+      }
+    }
+  }
+
+  function countConflicts(g: MapCell[][]): number {
+    let n = 0;
+    for (const row of g) for (const cell of row) if (cell.hasConflict) n++;
+    return n;
+  }
+
+  let improved = true;
+  let maxIter  = 500;
+
+  while (improved && maxIter-- > 0) {
+    improved = false;
+    const before = countConflicts(g);
+    if (before === 0) break;
+
+    const conflicted: [number, number][] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (g[r]![c]!.hasConflict) conflicted.push([r, c]);
+      }
+    }
+
+    outer:
+    for (const [r1, c1] of conflicted) {
+      for (let r2 = 0; r2 < rows; r2++) {
+        for (let c2 = 0; c2 < cols; c2++) {
+          if (r1 === r2 && c1 === c2) continue;
+          const p1 = g[r1]![c1]!.plant;
+          const p2 = g[r2]![c2]!.plant;
+          if (!p1 || !p2 || p1.id === p2.id) continue;
+
+          g[r1]![c1]! = { plant: p2, hasConflict: false };
+          g[r2]![c2]! = { plant: p1, hasConflict: false };
+          revalidate(g);
+
+          if (countConflicts(g) < before) {
+            improved = true;
+            break outer;
+          }
+
+          g[r1]![c1]! = { plant: p1, hasConflict: false };
+          g[r2]![c2]! = { plant: p2, hasConflict: false };
+          revalidate(g);
+        }
+      }
+    }
+  }
+
+  return g;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
