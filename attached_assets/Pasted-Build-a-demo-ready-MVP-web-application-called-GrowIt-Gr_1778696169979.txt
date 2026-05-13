@@ -1,0 +1,155 @@
+Build a demo-ready MVP web application called GrowIt+.
+
+GrowIt+ is a location-aware AI-assisted garden planning app for homeowners. The app should not be branded as a Calgary-only app. Calgary is the default MVP demo location and beachhead market, but the product should feel expandable to other Alberta and Canadian growing regions.
+
+The app helps users create a personalized vegetable and herb garden plan based on:
+- growing region
+- garden dimensions
+- sunlight exposure
+- soil type
+- plant preference
+- local frost dates
+
+Use this stack:
+- React + Vite frontend
+- TypeScript where practical
+- Tailwind CSS
+- Node.js + Express backend only if needed
+- localStorage/sessionStorage for MVP persistence
+- no Supabase, no payments, no Mixpanel, no live chat, no Gemini video, no pest diagnosis, no e-commerce, no admin dashboard
+
+Build the complete P0 MVP flow first using deterministic local data. Do not integrate OpenAI yet.
+
+P0 MVP user flow:
+1. Landing page
+2. Garden setup questionnaire
+3. Local frost date confirmation screen
+4. Deterministic plan generation
+5. Visual garden map
+6. Week-by-week planting schedule
+7. Save/restore in browser storage
+8. Print / Save as PDF using browser print
+
+Landing page requirements:
+- GrowIt+ wordmark
+- tagline: “Your local garden, planned by AI”
+- short value proposition
+- primary CTA: “Plan My Garden”
+- no account creation required
+- earthy visual style with forest green, warm brown, and cream
+
+Garden questionnaire fields:
+- growing region dropdown:
+  - Calgary
+  - Edmonton
+  - Red Deer
+  - Airdrie
+  - Cochrane
+  - Okotoks
+- garden length in feet
+- garden width in feet
+- cap each dimension at 20 ft; if user enters more than 20, set it to 20 and show this notice: “GrowIt+ supports gardens up to 20ft x 20ft. Your dimensions have been adjusted.”
+- sunlight exposure:
+  - Full Sun
+  - Partial Shade
+  - Full Shade
+- soil type:
+  - Raised Bed
+  - In-Ground Clay
+  - In-Ground Loam
+  - Container/Pots
+- plant preference:
+  - Vegetables Only
+  - Vegetables + Herbs
+
+Use this MVP frost date table:
+- Calgary: last spring frost May 14, first fall frost Sep 17, Zone 3b–4a
+- Edmonton: last spring frost May 23, first fall frost Sep 10, Zone 3a–4a
+- Red Deer: last spring frost May 21, first fall frost Sep 12, Zone 3b
+- Airdrie: last spring frost May 18, first fall frost Sep 13, Zone 3b
+- Cochrane: last spring frost May 20, first fall frost Sep 11, Zone 3b
+- Okotoks: last spring frost May 13, first fall frost Sep 18, Zone 4a
+
+Use this Zone 3b–4a short-season plant whitelist:
+Vegetables:
+- carrots
+- kale
+- spinach
+- lettuce
+- radishes
+- peas
+- beans
+- zucchini
+- tomatoes
+- cucumbers
+- beets
+- swiss chard
+- broccoli
+- cabbage
+- potatoes
+
+Herbs:
+- basil
+- chives
+- parsley
+- dill
+- cilantro
+- thyme
+- oregano
+- mint
+- sage
+- lavender
+
+Plan generation requirements:
+- Generate a structured garden plan from deterministic rules.
+- The plan must include:
+  - plant list
+  - visual garden map
+  - week-by-week schedule
+  - local timing explanation
+- Use local frost dates to determine planting timing.
+- Distinguish action types:
+  - start indoors
+  - direct sow
+  - buy as transplant
+- Use simple companion planting validation. If a questionable pairing exists, show a warning icon instead of blocking the plan.
+- The fallback deterministic generator must always work without an AI API key.
+
+Visual garden map requirements:
+- grid scaled to the selected dimensions
+- maximum 20 x 20 cells
+- show plant emoji and abbreviated plant name in each cell
+- green style for vegetables
+- warm brown style for herbs
+- show warning icon for companion planting conflicts
+- mobile responsive; horizontally scroll if needed
+
+Schedule requirements:
+- show all weeks from current date through first fall frost
+- highlight current week
+- each week shows plant actions and plain-language explanation
+- inactive weeks say: “No actions this week — just water and watch!”
+
+Storage requirements:
+- save generated plan to localStorage or sessionStorage
+- restore plan on browser refresh
+- include a reset/start-over option
+
+Print requirements:
+- add print CSS
+- include “Print / Save as PDF” button using window.print()
+- hide buttons/navigation in print view
+- print garden map and schedule cleanly
+
+Code quality requirements:
+- Use clear component structure.
+- Keep data in separate files where practical:
+  - locations/frost dates
+  - plant whitelist
+  - companion rules
+  - plan generation logic
+- Do not hardcode all logic directly inside one large component.
+- Add comments where the planning logic may be hard to understand.
+- Make the UI polished enough for a class presentation.
+
+Before coding, summarize the implementation plan in 8–12 bullets and identify any assumptions. Then build the app.
