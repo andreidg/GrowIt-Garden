@@ -6,6 +6,8 @@ import WeeklySchedule from "@/components/WeeklySchedule";
 import PlantLegend from "@/components/PlantLegend";
 import BottomNav, { type PlanTab } from "@/components/BottomNav";
 import { Printer, RotateCcw, AlertTriangle, MapPin, Calendar, Info } from "lucide-react";
+import WeatherRiskCard from "@/components/WeatherRiskCard";
+import { useWeatherRisk } from "@/hooks/useWeatherRisk";
 
 interface PlanPageProps {
   plan: GeneratedPlan;
@@ -17,6 +19,9 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
 
   const { profile, region, conflicts, selectedPlants, grid, schedule,
           timingExplanation, companionNotes, cautionNotes } = plan;
+
+  const { data: weatherData, loading: weatherLoading, error: weatherError } =
+    useWeatherRisk(region.label);
 
   const fmt          = (ft: number) => displayDimension(ft, profile.unitPreference);
   const gardenSizeStr = `${fmt(profile.lengthFt)} × ${fmt(profile.widthFt)}`;
@@ -92,6 +97,13 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
               </div>
             </div>
           )}
+
+          {/* Weather risk card */}
+          <WeatherRiskCard
+            loading={weatherLoading}
+            error={weatherError}
+            data={weatherData}
+          />
 
           {/* Companion conflicts */}
           {hasConflicts && (
