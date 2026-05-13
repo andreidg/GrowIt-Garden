@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { REGION_KEYS } from "@/data/locations";
-import type { GardenProfile, SunlightLevel, SoilType, PlantPreference, UnitSystem } from "@/types/garden";
+import { VEGETABLES, HERBS, FLOWERS, type PlantItem } from "@/data/plants";
+import type { GardenProfile, SunlightLevel, SoilType, UnitSystem, GardenArea, CustomPlant, PlantType } from "@/types/garden";
 import { UNIT_CONFIG, capToMax, toInternalFt } from "@/utils/units";
-import { ArrowLeft, Sun, CloudSun, Cloud, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X } from "lucide-react";
 import PhotoAnalyzer, { ConfidenceBadge, type Confidence } from "@/components/PhotoAnalyzer";
 
 interface QuestionnairePageProps {
   onNext: (profile: GardenProfile) => void;
   onBack: () => void;
 }
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 
 const REGION_LABELS: Record<string, string> = {
   Calgary:    "Calgary",
@@ -19,101 +24,268 @@ const REGION_LABELS: Record<string, string> = {
   Okotoks:    "Okotoks",
 };
 
-const SUNLIGHT_OPTIONS: { id: SunlightLevel; icon: typeof Sun; label: string; sub: string }[] = [
-  { id: "Full Sun",      icon: Sun,      label: "Full Sun",      sub: "6+ hrs direct sun" },
-  { id: "Partial Shade", icon: CloudSun, label: "Partial Shade", sub: "3–6 hrs per day"  },
-  { id: "Full Shade",    icon: Cloud,    label: "Full Shade",    sub: "Under 3 hrs"       },
+const REGION_EMOJI: Record<string, string> = {
+  Calgary:    "🌆",
+  Edmonton:   "🏙",
+  "Red Deer": "🌲",
+  Airdrie:    "🌾",
+  Cochrane:   "⛰️",
+  Okotoks:    "🪨",
+};
+
+const SUNLIGHT_OPTIONS: { id: SunlightLevel; emoji: string; label: string; desc: string }[] = [
+  { id: "Full Sun",      emoji: "☀️", label: "Full Sun",      desc: "6+ hours of direct sun per day. Best for vegetables, herbs, and sun-loving flowers." },
+  { id: "Part Sun",      emoji: "🌤", label: "Part Sun",      desc: "4–6 hours of direct sun. Works well for many vegetables with some afternoon shade." },
+  { id: "Part Shade",    emoji: "⛅", label: "Part Shade",    desc: "2–4 hours of direct sun or filtered light all day. Suits leafy greens and herbs." },
+  { id: "Dappled Shade", emoji: "🌥", label: "Dappled Shade", desc: "Sunlight filtered through trees or structures. Common near fences or pergolas." },
+  { id: "Full Shade",    emoji: "☁️", label: "Full Shade",    desc: "Under 2 hours of direct sun. Needs bright indirect outdoor light." },
 ];
 
 const SOIL_OPTIONS: SoilType[] = ["Raised Bed", "In-Ground Clay", "In-Ground Loam", "Container/Pots"];
+const SOIL_EMOJI: Record<SoilType, string> = {
+  "Raised Bed":     "🪴",
+  "In-Ground Clay": "🏔",
+  "In-Ground Loam": "🌍",
+  "Container/Pots": "🫙",
+};
 
-const PLANT_PREFS: { id: PlantPreference; emoji: string; label: string; sub: string }[] = [
-  { id: "Vegetables Only",              emoji: "🥕", label: "Vegetables Only",        sub: "Tomatoes, kale, carrots…"        },
-  { id: "Vegetables + Herbs",           emoji: "🌿", label: "Vegetables + Herbs",      sub: "Edibles + basil, mint…"          },
-  { id: "Vegetables + Herbs + Flowers", emoji: "🌸", label: "Veggies, Herbs & Flowers",sub: "Full mix with pollinators"       },
-  { id: "Flowers + Herbs",              emoji: "🌺", label: "Flowers + Herbs",          sub: "Aromatic + decorative"           },
-  { id: "Flowers Only",                 emoji: "🌻", label: "Flowers Only",             sub: "Dahlias, marigolds, lavender…"  },
+const QUICK_PRESETS = [
+  { label: "Small 4×4",   ft: { len: 4,  wid: 4  } },
+  { label: "Medium 10×8", ft: { len: 10, wid: 8  } },
+  { label: "Large 16×12", ft: { len: 16, wid: 12 } },
 ];
 
-export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageProps) {
-  const [step, setStep]                     = useState(1);
-  const [region, setRegion]                 = useState("Calgary");
-  const [showWhyTip, setShowWhyTip]         = useState(false);
-  const [unit, setUnit]                     = useState<UnitSystem>("imperial");
-  const [lengthVal, setLengthVal]           = useState<string>("10");
-  const [widthVal, setWidthVal]             = useState<string>("8");
-  const [dimensionCapped, setDimensionCapped] = useState(false);
-  const [sunlight, setSunlight]             = useState<SunlightLevel>("Full Sun");
-  const [soilType, setSoilType]             = useState<SoilType>("Raised Bed");
-  const [plantPref, setPlantPref]           = useState<PlantPreference>("Vegetables + Herbs + Flowers");
-  const [sunlightConf, setSunlightConf]     = useState<Confidence | null>(null);
-  const [soilConf, setSoilConf]             = useState<Confidence | null>(null);
+const TOTAL_STEPS = 3;
+const PRIMARY_ID   = "area-primary";
 
-  const handlePhotoResult = (r: { sunlight: SunlightLevel; sunlightConfidence: Confidence; soilType: SoilType; soilTypeConfidence: Confidence }) => {
-    setSunlight(r.sunlight);       setSunlightConf(r.sunlightConfidence);
-    setSoilType(r.soilType);       setSoilConf(r.soilTypeConfidence);
-  };
+// ---------------------------------------------------------------------------
+// Plant-section sub-component (co-located for simplicity)
+// ---------------------------------------------------------------------------
+
+function PlantSection({
+  title, emoji, plants, selectedPlantIds, onToggle, onToggleAll,
+}: {
+  title: string;
+  emoji: string;
+  plants: PlantItem[];
+  selectedPlantIds: string[];
+  onToggle: (id: string) => void;
+  onToggleAll: () => void;
+}) {
+  const allSelected  = plants.length > 0 && plants.every(p => selectedPlantIds.includes(p.id));
+  const someSelected = plants.some(p => selectedPlantIds.includes(p.id));
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest">
+          {emoji} {title}
+        </h3>
+        <button onClick={onToggleAll} className="text-xs text-forest font-semibold hover:underline">
+          {allSelected ? "Deselect all" : someSelected ? "Select all" : "Select all"}
+        </button>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {plants.map(plant => {
+          const selected = selectedPlantIds.includes(plant.id);
+          return (
+            <button key={plant.id} onClick={() => onToggle(plant.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border text-left transition-all ${
+                selected ? "bg-forest/10 border-forest/30" : "bg-cream-light border-cream-dark/50"
+              }`}>
+              <span className="text-xl">{plant.emoji}</span>
+              <p className="flex-1 min-w-0 text-sm font-semibold text-forest">{plant.name}</p>
+              <div className={`w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-all ${
+                selected ? "bg-forest border-forest" : "border-forest/25"
+              }`}>
+                {selected && <Check className="w-3 h-3 text-cream" />}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function valToDisplay(ft: number, unit: UnitSystem): string {
+  const v = unit === "imperial" ? ft : Math.round(ft * 0.3048 * 10) / 10;
+  return String(v);
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageProps) {
+
+  // ── Navigation ──────────────────────────────────────────────────────────
+  const [step, setStep] = useState(1);
+
+  // ── Step 1 ───────────────────────────────────────────────────────────────
+  const [region,      setRegion]      = useState("Calgary");
+  const [showWhyTip,  setShowWhyTip]  = useState(false);
+
+  // ── Step 2 ───────────────────────────────────────────────────────────────
+  const [unit, setUnit] = useState<UnitSystem>("imperial");
+  const [areas, setAreas] = useState<GardenArea[]>([{
+    id: PRIMARY_ID, name: "My Garden",
+    lengthFt: 10, widthFt: 8,
+    sunlight: "Full Sun", soilType: "Raised Bed",
+  }]);
+  const [areaInputs, setAreaInputs] = useState<Record<string, { len: string; wid: string }>>({
+    [PRIMARY_ID]: { len: "10", wid: "8" },
+  });
+  const [capWarnings, setCapWarnings] = useState<Record<string, boolean>>({});
+  const [primaryConf, setPrimaryConf] = useState<{ sunlight: Confidence | null; soil: Confidence | null }>({
+    sunlight: null, soil: null,
+  });
+
+  // ── Step 3 ───────────────────────────────────────────────────────────────
+  const [selectedPlantIds, setSelectedPlantIds] = useState<string[]>([]);
+  const [customPlants, setCustomPlants]         = useState<CustomPlant[]>([]);
+  const [showCustomForm,  setShowCustomForm]    = useState(false);
+  const [customName,      setCustomName]        = useState("");
+  const [customCategory,  setCustomCategory]    = useState<PlantType | "other">("vegetable");
+  const [customNotes,     setCustomNotes]       = useState("");
 
   const cfg = UNIT_CONFIG[unit];
-  const TOTAL_STEPS = 4;
 
-  const handleDimension = (val: string, setter: (v: string) => void) => {
-    if (val === "" || val === "-") { setter(val); setDimensionCapped(false); return; }
-    const num = parseFloat(val);
-    if (isNaN(num) || num <= 0) { setter(val); return; }
-    const capped = capToMax(num, unit);
-    if (capped < num) setDimensionCapped(true);
-    setter(String(capped));
+  // ── Area management ───────────────────────────────────────────────────────
+  const updateArea = (id: string, patch: Partial<GardenArea>) =>
+    setAreas(prev => prev.map(a => a.id === id ? { ...a, ...patch } : a));
+
+  const handleAreaDim = (areaId: string, field: "len" | "wid", rawVal: string) => {
+    setAreaInputs(prev => ({
+      ...prev,
+      [areaId]: { ...(prev[areaId] ?? { len: "10", wid: "8" }), [field]: rawVal },
+    }));
+    const num = parseFloat(rawVal);
+    if (!isNaN(num) && num > 0) {
+      const capped = capToMax(num, unit);
+      const ft     = toInternalFt(capped, unit);
+      updateArea(areaId, field === "len" ? { lengthFt: ft } : { widthFt: ft });
+      setCapWarnings(prev => ({ ...prev, [areaId]: capped < num }));
+    }
   };
 
   const handleUnitSwitch = (sys: UnitSystem) => {
     setUnit(sys);
-    setDimensionCapped(false);
-    // Reset to sensible defaults for the new unit
-    setLengthVal(sys === "imperial" ? "10" : "3");
-    setWidthVal(sys === "imperial" ? "8" : "2.5");
+    setAreaInputs(_prev => {
+      const next: Record<string, { len: string; wid: string }> = {};
+      for (const a of areas) {
+        next[a.id] = { len: valToDisplay(a.lengthFt, sys), wid: valToDisplay(a.widthFt, sys) };
+      }
+      return next;
+    });
+    setCapWarnings({});
   };
 
-  const canAdvanceStep2 = () => {
-    const l = parseFloat(lengthVal);
-    const w = parseFloat(widthVal);
-    return !isNaN(l) && l > 0 && !isNaN(w) && w > 0;
+  const applyPreset = (areaId: string, ft: { len: number; wid: number }) => {
+    updateArea(areaId, { lengthFt: ft.len, widthFt: ft.wid });
+    setAreaInputs(prev => ({
+      ...prev,
+      [areaId]: { len: valToDisplay(ft.len, unit), wid: valToDisplay(ft.wid, unit) },
+    }));
+    setCapWarnings(prev => ({ ...prev, [areaId]: false }));
   };
 
+  const addArea = () => {
+    const n  = areas.length + 1;
+    const id = `area-${Date.now()}`;
+    const defaultNames = ["", "My Garden", "Front Yard", "Side Bed", "Herb Planter", "Balcony"];
+    const newArea: GardenArea = {
+      id,
+      name:     defaultNames[n] ?? `Garden Area ${n}`,
+      lengthFt: 8, widthFt: 6,
+      sunlight: "Full Sun", soilType: "Raised Bed",
+    };
+    setAreas(prev => [...prev, newArea]);
+    setAreaInputs(prev => ({
+      ...prev,
+      [id]: { len: valToDisplay(8, unit), wid: valToDisplay(6, unit) },
+    }));
+  };
+
+  const removeArea = (id: string) => {
+    setAreas(prev => prev.filter(a => a.id !== id));
+    setAreaInputs(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setCapWarnings(prev => { const n = { ...prev }; delete n[id]; return n; });
+  };
+
+  const handlePhotoResult = (r: {
+    sunlight: SunlightLevel;
+    sunlightConfidence: Confidence;
+    soilType: SoilType;
+    soilTypeConfidence: Confidence;
+  }) => {
+    setAreas(prev => prev.map((a, i) =>
+      i === 0 ? { ...a, sunlight: r.sunlight, soilType: r.soilType } : a
+    ));
+    setPrimaryConf({ sunlight: r.sunlightConfidence, soil: r.soilTypeConfidence });
+  };
+
+  // ── Plant selection ───────────────────────────────────────────────────────
+  const togglePlant = (id: string) =>
+    setSelectedPlantIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const makeToggleAll = (ids: string[]) => () =>
+    setSelectedPlantIds(prev => {
+      const allOn = ids.every(id => prev.includes(id));
+      return allOn ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])];
+    });
+
+  const addCustomPlant = () => {
+    if (!customName.trim()) return;
+    setCustomPlants(prev => [...prev, {
+      id:       `custom-${Date.now()}`,
+      name:     customName.trim(),
+      category: customCategory,
+      notes:    customNotes.trim() || undefined,
+    }]);
+    setCustomName(""); setCustomNotes(""); setShowCustomForm(false);
+  };
+
+  const removeCustom = (id: string) => setCustomPlants(prev => prev.filter(c => c.id !== id));
+
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = () => {
-    const rawLen = parseFloat(lengthVal) || 10;
-    const rawWid = parseFloat(widthVal)  || 8;
-    const lengthFt = toInternalFt(capToMax(rawLen, unit), unit);
-    const widthFt  = toInternalFt(capToMax(rawWid, unit), unit);
-    onNext({ region, lengthFt, widthFt, sunlight, soilType, plantPreference: plantPref, unitPreference: unit });
+    const primary = areas[0]!;
+    onNext({
+      region,
+      unitPreference: unit,
+      lengthFt: primary.lengthFt,
+      widthFt:  primary.widthFt,
+      sunlight: primary.sunlight,
+      soilType: primary.soilType,
+      areas,
+      selectedPlantIds,
+      customPlants,
+    });
   };
 
   const goBack = () => step > 1 ? setStep(s => s - 1) : onBack();
-  const goNext = () => setStep(s => s + 1);
+  const totalSelected = selectedPlantIds.length + customPlants.length;
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="w-full flex-1 flex flex-col bg-cream min-h-full">
 
-      {/* ── Sticky header ── */}
-      <div className="sticky top-0 bg-cream z-10 px-6 pt-8 pb-4 border-b border-cream-dark/50">
+      {/* Sticky progress header */}
+      <div className="sticky top-0 bg-cream z-10 px-6 pt-8 pb-4 border-b border-cream-dark/40">
         <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={goBack}
-            className="p-2 -ml-2 text-forest hover:bg-cream-dark/50 rounded-full transition-colors"
-            data-testid="btn-back"
-          >
+          <button onClick={goBack} data-testid="btn-back"
+            className="p-2 -ml-2 text-forest hover:bg-cream-dark/50 rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 flex gap-1.5">
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${
-                  i + 1 < step  ? "bg-forest/40" :
-                  i + 1 === step ? "bg-forest" :
-                  "bg-cream-dark"
-                }`}
-              />
+            {[1, 2, 3].map(i => (
+              <div key={i} className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${
+                i < step ? "bg-forest/40" : i === step ? "bg-forest" : "bg-cream-dark"
+              }`} />
             ))}
           </div>
           <span className="text-xs font-medium text-forest/40 w-10 text-right">
@@ -122,320 +294,397 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
         </div>
       </div>
 
-      {/* ── Step content ── */}
       <div className="flex-1 overflow-y-auto hide-scrollbar">
 
-        {/* ── STEP 1: Region ── */}
+        {/* ── STEP 1: Region ─────────────────────────────────────────────── */}
         {step === 1 && (
           <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div>
-              <h1 className="font-serif text-4xl font-semibold text-forest leading-tight mb-2">
+              <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
+                Step 1 of 3
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
                 Where is your garden?
-              </h1>
-              <p className="text-forest/60 text-base">
-                We'll set your frost dates and growing zone automatically.
+              </h2>
+              <p className="text-sm text-forest/60 leading-relaxed">
+                We use your location to set frost dates and climate-matched growing advice.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               {REGION_KEYS.map(key => (
-                <button
-                  key={key}
-                  onClick={() => setRegion(key)}
-                  className={`py-4 px-4 rounded-2xl border text-left font-medium transition-all ${
+                <button key={key} onClick={() => setRegion(key)}
+                  className={`flex flex-col items-start p-4 rounded-2xl border transition-all ${
                     region === key
-                      ? "bg-forest border-forest text-cream shadow-md"
-                      : "bg-cream-light border-cream-dark text-forest hover:border-forest/30"
-                  }`}
-                  data-testid={`region-btn-${key.toLowerCase().replace(" ", "-")}`}
-                >
-                  <span className="block text-base font-semibold">{REGION_LABELS[key]}</span>
+                      ? "bg-forest border-forest text-cream"
+                      : "bg-cream-light border-cream-dark text-forest"
+                  }`}>
+                  <span className="text-lg mb-1">{REGION_EMOJI[key] ?? "📍"}</span>
+                  <span className="font-semibold text-sm leading-tight">
+                    {REGION_LABELS[key] ?? key}
+                  </span>
                 </button>
               ))}
             </div>
 
-            {/* Why does this matter */}
-            <div className="bg-cream-dark/30 rounded-2xl overflow-hidden">
+            {/* Why this matters */}
+            <div className="bg-forest/5 rounded-2xl overflow-hidden border border-forest/8">
               <button
                 onClick={() => setShowWhyTip(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-forest"
-              >
-                <span>Why does this matter?</span>
-                {showWhyTip ? <ChevronUp className="w-4 h-4 text-forest/50" /> : <ChevronDown className="w-4 h-4 text-forest/50" />}
+                className="w-full flex items-center justify-between px-4 py-3.5">
+                <span className="text-sm font-medium text-forest/70">
+                  Why does location matter?
+                </span>
+                {showWhyTip
+                  ? <ChevronUp className="w-4 h-4 text-forest/40" />
+                  : <ChevronDown className="w-4 h-4 text-forest/40" />}
               </button>
               {showWhyTip && (
-                <p className="px-4 pb-4 text-sm text-forest/70 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-200">
-                  Each Alberta region has slightly different frost dates due to local elevation and wind patterns. 
-                  Your region determines when to start seeds indoors, when it's safe to transplant, and your effective growing season length.
-                </p>
+                <div className="px-4 pb-4 text-sm text-forest/65 leading-relaxed">
+                  Each Alberta city has different frost dates and microclimates. Your last spring frost
+                  date sets when to start seeds indoors, when to direct sow, and when the risk of frost
+                  passes for tender crops like tomatoes and basil.
+                </div>
               )}
             </div>
 
-            <button
-              onClick={goNext}
-              className="w-full bg-forest text-cream text-lg font-semibold py-4 rounded-full shadow-md transition-transform active:scale-95 mt-2"
-              data-testid="btn-next-step1"
-            >
-              Continue
-            </button>
+            <div className="pt-2">
+              <button onClick={() => setStep(2)} data-testid="btn-next-step"
+                className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
+                Continue
+              </button>
+            </div>
           </div>
         )}
 
-        {/* ── STEP 2: Garden Size ── */}
+        {/* ── STEP 2: Garden Areas ───────────────────────────────────────── */}
         {step === 2 && (
-          <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="px-6 py-8 flex flex-col gap-5 animate-in fade-in slide-in-from-right-4 duration-300">
             <div>
-              <h1 className="font-serif text-4xl font-semibold text-forest leading-tight mb-2">
-                How big is your garden?
-              </h1>
-              <p className="text-forest/60 text-base">
-                Enter the length and width of your growing space.
+              <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
+                Step 2 of 3
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
+                Your garden spaces
+              </h2>
+              <p className="text-sm text-forest/60 leading-relaxed">
+                Tell us about each growing area. You can add more than one.
               </p>
             </div>
 
             {/* Unit toggle */}
-            <div className="flex bg-cream-dark rounded-full p-1 self-start">
+            <div className="flex items-center gap-1 bg-cream-dark/60 rounded-xl p-1 w-fit">
               {(["imperial", "metric"] as UnitSystem[]).map(sys => (
-                <button
-                  key={sys}
-                  type="button"
-                  onClick={() => handleUnitSwitch(sys)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                    unit === sys ? "bg-forest text-cream shadow-sm" : "text-forest/60 hover:text-forest"
-                  }`}
-                  data-testid={`unit-${UNIT_CONFIG[sys].abbr}`}
-                >
-                  {UNIT_CONFIG[sys].abbr === "ft" ? "Imperial (ft)" : "Metric (m)"}
+                <button key={sys} onClick={() => handleUnitSwitch(sys)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    unit === sys ? "bg-white text-forest shadow-sm" : "text-forest/50"
+                  }`}>
+                  {sys === "imperial" ? "ft (Imperial)" : "m (Metric)"}
                 </button>
               ))}
             </div>
 
-            {/* Dimension inputs */}
-            <div className="grid grid-cols-2 gap-4">
-              {([
-                { label: "Length", val: lengthVal, setter: setLengthVal, testId: "input-length" },
-                { label: "Width",  val: widthVal,  setter: setWidthVal,  testId: "input-width"  },
-              ] as const).map(({ label, val, setter, testId }) => (
-                <div key={label} className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-forest/70 ml-1">
-                    {label} ({cfg.label})
-                  </label>
+            {/* Photo analyzer — pre-fills primary area */}
+            <div className="bg-forest/5 border border-forest/10 rounded-2xl p-4">
+              <p className="text-sm font-semibold text-forest mb-0.5">
+                📷 Scan your main garden
+              </p>
+              <p className="text-xs text-forest/55 mb-3">
+                Upload a photo to auto-detect sunlight and soil type for your first area.
+              </p>
+              <PhotoAnalyzer onResult={handlePhotoResult} />
+            </div>
+
+            {/* Area cards */}
+            {areas.map((area, areaIdx) => (
+              <div key={area.id}
+                className="bg-cream-light border border-cream-dark rounded-2xl overflow-hidden shadow-sm">
+
+                {/* Card header — name + remove */}
+                <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-cream-dark/60">
                   <input
-                    type="number"
-                    inputMode="decimal"
-                    step="any"
-                    min="0.1"
-                    value={val}
-                    onChange={e => handleDimension(e.target.value, setter)}
-                    className="h-14 bg-cream-light border border-cream-dark rounded-2xl px-4 text-forest text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest/30"
-                    placeholder={String(cfg.maxInput)}
-                    data-testid={testId}
+                    value={area.name}
+                    onChange={e => updateArea(area.id, { name: e.target.value })}
+                    placeholder="Area name"
+                    className="flex-1 text-sm font-bold text-forest bg-transparent border-none outline-none placeholder:text-forest/30"
                   />
+                  {areas.length > 1 && (
+                    <button onClick={() => removeArea(area.id)}
+                      className="text-forest/25 hover:text-terracotta transition-colors p-1 rounded-lg">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-              ))}
-            </div>
 
-            {/* Size guidance */}
-            <div className="grid grid-cols-3 gap-2">
-              {(unit === "imperial"
-                ? [{ label: "Small", sub: "4 × 4 ft",  len: "4",  wid: "4"  },
-                   { label: "Medium",sub: "8 × 8 ft",  len: "8",  wid: "8"  },
-                   { label: "Large", sub: "12 × 12 ft",len: "12", wid: "12" }]
-                : [{ label: "Small", sub: "1.2 × 1.2 m",len: "1.2",wid: "1.2"},
-                   { label: "Medium",sub: "2.4 × 2.4 m",len: "2.4",wid: "2.4"},
-                   { label: "Large", sub: "3.7 × 3.7 m",len: "3.7",wid: "3.7"}]
-              ).map(({ label, sub, len, wid }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => { setLengthVal(len); setWidthVal(wid); setDimensionCapped(false); }}
-                  className="bg-cream-light border border-cream-dark rounded-xl py-3 flex flex-col items-center hover:border-forest/30 transition-colors"
-                >
-                  <span className="text-xs font-bold text-forest">{label}</span>
-                  <span className="text-[10px] text-forest/50 mt-0.5">{sub}</span>
-                </button>
-              ))}
-            </div>
+                <div className="p-4 flex flex-col gap-5">
 
-            {dimensionCapped && (
-              <div
-                data-testid="text-dimension-cap-notice"
-                className="text-sm text-terracotta font-medium bg-terracotta/10 p-4 rounded-2xl border border-terracotta/20 flex items-start gap-2"
-              >
-                <span className="text-base">⚠️</span>
-                <span>
-                  GrowIt+ supports gardens up to {cfg.capDisplay}. Your dimensions have been adjusted.
-                </span>
+                  {/* Dimensions */}
+                  <div>
+                    <p className="text-xs font-semibold text-forest/45 uppercase tracking-wider mb-2">
+                      Size
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 mb-2">
+                      <div>
+                        <label className="text-xs text-forest/50 mb-1 block">
+                          Length ({cfg.abbr})
+                        </label>
+                        <input
+                          inputMode="decimal"
+                          value={areaInputs[area.id]?.len ?? ""}
+                          onChange={e => handleAreaDim(area.id, "len", e.target.value)}
+                          className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm font-medium text-forest focus:outline-none focus:border-forest/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-forest/50 mb-1 block">
+                          Width ({cfg.abbr})
+                        </label>
+                        <input
+                          inputMode="decimal"
+                          value={areaInputs[area.id]?.wid ?? ""}
+                          onChange={e => handleAreaDim(area.id, "wid", e.target.value)}
+                          className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm font-medium text-forest focus:outline-none focus:border-forest/40"
+                        />
+                      </div>
+                    </div>
+                    {capWarnings[area.id] && (
+                      <p className="text-xs text-terracotta mb-2">
+                        Maximum {cfg.maxInput} {cfg.abbr} per dimension applied.
+                      </p>
+                    )}
+                    {/* Quick presets */}
+                    <div className="flex gap-2 flex-wrap">
+                      {QUICK_PRESETS.map(p => (
+                        <button key={p.label} onClick={() => applyPreset(area.id, p.ft)}
+                          className="text-xs text-forest/55 border border-cream-dark bg-cream hover:bg-cream-dark/50 px-2.5 py-1 rounded-lg transition-colors">
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sunlight */}
+                  <div>
+                    <p className="text-xs font-semibold text-forest/45 uppercase tracking-wider mb-2">
+                      Sunlight
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      {SUNLIGHT_OPTIONS.map(opt => {
+                        const active = area.sunlight === opt.id;
+                        return (
+                          <button key={opt.id} onClick={() => updateArea(area.id, { sunlight: opt.id })}
+                            className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                              active
+                                ? "bg-forest/10 border-forest/30"
+                                : "bg-cream border-cream-dark"
+                            }`}>
+                            <div className={`mt-1 w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center ${
+                              active ? "border-forest" : "border-forest/25"
+                            }`}>
+                              {active && <div className="w-1.5 h-1.5 rounded-full bg-forest" />}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-forest leading-tight">
+                                {opt.emoji} {opt.label}
+                              </p>
+                              <p className="text-[10px] text-forest/50 leading-snug mt-0.5">
+                                {opt.desc}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {areaIdx === 0 && primaryConf.sunlight && (
+                      <div className="mt-2">
+                        <ConfidenceBadge confidence={primaryConf.sunlight} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Soil type */}
+                  <div>
+                    <p className="text-xs font-semibold text-forest/45 uppercase tracking-wider mb-2">
+                      Soil Setup
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {SOIL_OPTIONS.map(soil => {
+                        const active = area.soilType === soil;
+                        return (
+                          <button key={soil} onClick={() => updateArea(area.id, { soilType: soil })}
+                            className={`py-2.5 px-3 rounded-xl border text-left transition-all ${
+                              active
+                                ? "bg-forest border-forest text-cream"
+                                : "bg-cream border-cream-dark text-forest"
+                            }`}>
+                            <span className="text-base block">{SOIL_EMOJI[soil]}</span>
+                            <span className="text-xs font-medium leading-tight">{soil}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {areaIdx === 0 && primaryConf.soil && (
+                      <div className="mt-2">
+                        <ConfidenceBadge confidence={primaryConf.soil} />
+                      </div>
+                    )}
+                  </div>
+
+                </div>
               </div>
+            ))}
+
+            {/* Add area button */}
+            {areas.length < 5 && (
+              <button onClick={addArea}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-dashed border-forest/20 text-sm font-medium text-forest/50 hover:border-forest/40 hover:text-forest/70 transition-all">
+                <Plus className="w-4 h-4" />
+                Add another garden area
+              </button>
             )}
 
-            <button
-              onClick={goNext}
-              disabled={!canAdvanceStep2()}
-              className="w-full bg-forest text-cream text-lg font-semibold py-4 rounded-full shadow-md transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed mt-2"
-              data-testid="btn-next-step2"
-            >
-              Continue
-            </button>
+            <div className="pt-2">
+              <button onClick={() => setStep(3)} data-testid="btn-next-step"
+                className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
+                Continue
+              </button>
+            </div>
           </div>
         )}
 
-        {/* ── STEP 3: Growing Conditions ── */}
+        {/* ── STEP 3: Plant Selection ────────────────────────────────────── */}
         {step === 3 && (
           <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div>
-              <h1 className="font-serif text-4xl font-semibold text-forest leading-tight mb-2">
-                Growing conditions
-              </h1>
-              <p className="text-forest/60 text-base">
-                Help us match plants to your space.
+              <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
+                Step 3 of 3
+              </p>
+              <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
+                Pick your plants
+              </h2>
+              <p className="text-sm text-forest/60 leading-relaxed">
+                Select what you'd like to grow. Skipping is fine — we'll choose the best plants for your conditions.
               </p>
             </div>
 
-            {/* Optional photo scan */}
-            <PhotoAnalyzer onResult={handlePhotoResult} />
+            <PlantSection
+              title="Vegetables" emoji="🥕"
+              plants={VEGETABLES}
+              selectedPlantIds={selectedPlantIds}
+              onToggle={togglePlant}
+              onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
+            />
+            <PlantSection
+              title="Herbs" emoji="🌿"
+              plants={HERBS}
+              selectedPlantIds={selectedPlantIds}
+              onToggle={togglePlant}
+              onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
+            />
+            <PlantSection
+              title="Flowers" emoji="🌸"
+              plants={FLOWERS}
+              selectedPlantIds={selectedPlantIds}
+              onToggle={togglePlant}
+              onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
+            />
 
-            {/* Sunlight */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-forest/70 uppercase tracking-wider">
-                  Sun Exposure
-                </label>
-                {sunlightConf && (
-                  <ConfidenceBadge confidence={sunlightConf} />
+            {/* Custom plants */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest">
+                  Custom Plants
+                </h3>
+                {!showCustomForm && (
+                  <button onClick={() => setShowCustomForm(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-forest border border-forest/20 px-3 py-1.5 rounded-full hover:bg-forest/5 transition-colors">
+                    <Plus className="w-3 h-3" /> Add custom plant
+                  </button>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {SUNLIGHT_OPTIONS.map(({ id, icon: Icon, label, sub }) => {
-                  const active = sunlight === id;
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => { setSunlight(id); setSunlightConf(null); }}
-                      className={`flex flex-col items-center gap-2 py-4 px-1 rounded-2xl border transition-all ${
-                        active
-                          ? "bg-forest border-forest text-cream shadow-md"
-                          : "bg-cream-light border-cream-dark text-forest hover:border-forest/30"
-                      }`}
-                    >
-                      <Icon className={`w-6 h-6 ${active ? "text-gold" : "text-forest/50"}`} />
-                      <span className="text-xs font-bold text-center leading-tight">{label}</span>
-                      <span className={`text-[10px] text-center leading-tight ${active ? "text-cream/60" : "text-forest/40"}`}>
-                        {sub}
-                      </span>
-                    </button>
-                  );
-                })}
+
+              <div className="bg-gold/10 border border-gold/25 rounded-xl px-3 py-2.5 mb-3">
+                <p className="text-xs text-forest/65 leading-snug">
+                  Custom plants are not yet validated against Alberta growing conditions. Timing in the schedule will be approximate — verify planting windows for your specific variety.
+                </p>
               </div>
-              {sunlight === "Full Shade" && (
-                <div className="text-sm text-terracotta bg-terracotta/10 p-3 rounded-xl border border-terracotta/20">
-                  ⚠️ Full shade limits edibles. Only shade-tolerant greens and some herbs can be recommended.
+
+              {showCustomForm && (
+                <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 mb-3 flex flex-col gap-3">
+                  <input
+                    placeholder="Plant name..."
+                    value={customName}
+                    onChange={e => setCustomName(e.target.value)}
+                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
+                  />
+                  <select
+                    value={customCategory}
+                    onChange={e => setCustomCategory(e.target.value as PlantType | "other")}
+                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest focus:outline-none focus:border-forest/40">
+                    <option value="vegetable">Vegetable</option>
+                    <option value="herb">Herb</option>
+                    <option value="flower">Flower</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <input
+                    placeholder="Notes (optional)..."
+                    value={customNotes}
+                    onChange={e => setCustomNotes(e.target.value)}
+                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={addCustomPlant} disabled={!customName.trim()}
+                      className="flex-1 bg-forest text-cream py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40">
+                      Add
+                    </button>
+                    <button
+                      onClick={() => { setShowCustomForm(false); setCustomName(""); setCustomNotes(""); }}
+                      className="flex-1 border border-cream-dark text-forest/70 py-2.5 rounded-xl text-sm font-medium">
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Soil type */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-forest/70 uppercase tracking-wider">
-                  Soil Setup
-                </label>
-                {soilConf && (
-                  <ConfidenceBadge confidence={soilConf} />
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {SOIL_OPTIONS.map(soil => {
-                  const active = soilType === soil;
-                  const emoji = soil === "Raised Bed" ? "🪴" : soil === "In-Ground Clay" ? "🏔" : soil === "In-Ground Loam" ? "🌍" : "🫙";
-                  return (
-                    <button
-                      key={soil}
-                      onClick={() => { setSoilType(soil); setSoilConf(null); }}
-                      className={`py-4 px-4 rounded-2xl border text-left transition-all ${
-                        active
-                          ? "bg-forest border-forest text-cream shadow-md"
-                          : "bg-cream-light border-cream-dark text-forest hover:border-forest/30"
-                      }`}
-                    >
-                      <span className="text-xl block mb-1">{emoji}</span>
-                      <span className={`text-sm font-medium leading-tight block ${active ? "text-cream" : "text-forest"}`}>
-                        {soil}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              onClick={goNext}
-              className="w-full bg-forest text-cream text-lg font-semibold py-4 rounded-full shadow-md transition-transform active:scale-95 mt-2"
-              data-testid="btn-next-step3"
-            >
-              Continue
-            </button>
-          </div>
-        )}
-
-        {/* ── STEP 4: Plant Preference ── */}
-        {step === 4 && (
-          <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div>
-              <h1 className="font-serif text-4xl font-semibold text-forest leading-tight mb-2">
-                What are you growing?
-              </h1>
-              <p className="text-forest/60 text-base">
-                Pick the mix that excites you most.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              {PLANT_PREFS.map(({ id, emoji, label, sub }) => {
-                const active = plantPref === id;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setPlantPref(id)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all ${
-                      active
-                        ? "bg-forest border-forest shadow-md"
-                        : "bg-cream-light border-cream-dark hover:border-forest/30"
-                    }`}
-                  >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 ${
-                      active ? "bg-cream/15" : "bg-cream"
-                    }`}>
-                      {emoji}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-semibold text-base leading-tight ${active ? "text-cream" : "text-forest"}`}>
-                        {label}
-                      </p>
-                      <p className={`text-sm mt-0.5 ${active ? "text-cream/60" : "text-forest/50"}`}>
-                        {sub}
-                      </p>
-                    </div>
-                    <div className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                      active ? "border-cream bg-cream" : "border-forest/30"
-                    }`}>
-                      {active && <div className="w-2.5 h-2.5 rounded-full bg-forest" />}
-                    </div>
+              {customPlants.map(cp => (
+                <div key={cp.id}
+                  className="flex items-center gap-3 px-4 py-3 bg-cream-light border border-cream-dark rounded-2xl mb-2">
+                  <span className="text-xl">🌱</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-forest">{cp.name}</p>
+                    <p className="text-[10px] text-forest/50 capitalize">
+                      {cp.category}{cp.notes ? ` · ${cp.notes}` : ""}
+                    </p>
+                  </div>
+                  <button onClick={() => removeCustom(cp.id)}
+                    className="text-forest/30 hover:text-terracotta transition-colors">
+                    <X className="w-4 h-4" />
                   </button>
-                );
-              })}
+                </div>
+              ))}
             </div>
 
-            <button
-              onClick={handleSubmit}
-              className="w-full bg-forest text-cream text-lg font-semibold py-4 rounded-full shadow-md transition-transform active:scale-95 mt-2"
-              data-testid="btn-next-questionnaire"
-            >
-              Review Frost Dates →
-            </button>
+            {totalSelected > 0 && (
+              <div className="bg-forest/5 border border-forest/10 rounded-xl px-4 py-3">
+                <p className="text-sm font-medium text-forest">
+                  {totalSelected} plant{totalSelected !== 1 ? "s" : ""} selected
+                </p>
+              </div>
+            )}
+
+            <div className="pt-2">
+              <button onClick={handleSubmit} data-testid="btn-generate"
+                className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
+                Generate My Plan
+              </button>
+              {totalSelected === 0 && (
+                <p className="text-center text-xs text-forest/40 mt-2">
+                  No plants selected — we'll choose the best fit for your garden ✨
+                </p>
+              )}
+            </div>
           </div>
         )}
-
       </div>
     </div>
   );

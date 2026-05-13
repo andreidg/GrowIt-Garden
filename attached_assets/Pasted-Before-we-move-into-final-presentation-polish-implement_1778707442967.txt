@@ -1,0 +1,203 @@
+Before we move into final presentation polish, implement the following targeted improvements. Keep the app stable and do not rebuild from scratch.
+
+Do not add authentication, payments, Supabase, Mixpanel, premium enforcement, live chat, Gemini video, pest diagnosis, e-commerce, or admin dashboard.
+
+The goal is to improve the current GrowIt app based on team review.
+
+1. Rename app from GrowIt+ to GrowIt
+
+Change the app name everywhere from “GrowIt+” to “GrowIt.”
+
+This should apply across:
+- visible UI text
+- browser title / metadata
+- landing page
+- headers
+- buttons
+- README if already created
+- comments or documentation where appropriate
+
+Do not change the core product concept. Only remove the plus sign from the brand name.
+
+2. Improve plant / veggie / flower selection
+
+Currently the plant type selection is too broad.
+
+Change the selection experience so users can choose specific plants they want to grow.
+
+Requirements:
+- Display selectable plant items as one item per row.
+- Use multi-select behaviour, such as checkboxes or selected cards.
+- Users should be able to select multiple vegetables, herbs, and flowers.
+- Organize the list by category:
+  - Vegetables
+  - Herbs
+  - Flowers
+- Include all currently supported whitelist items.
+- The generator should prioritize the user’s selected items when creating the garden plan.
+- If the user selects too many plants for the available garden space, include as many as reasonably fit and show a friendly note explaining that some selections were excluded because of space, sunlight, or growing-condition constraints.
+- If the user selects no specific plants, use the existing deterministic recommendation logic.
+
+3. Add manual plant entry
+
+Add the ability for the user to manually add a plant that is not already on the whitelist.
+
+Requirements:
+- Add an “Add custom plant” option.
+- User can enter:
+  - plant name
+  - category: vegetable, herb, flower, or other
+  - optional notes
+- Custom plants should be included in the plan if space allows.
+- Custom plants should be marked clearly as “Custom entry.”
+- Since custom entries may not have validated local growing data, show a caution note:
+  “This is a custom plant. GrowIt does not yet have verified local growing rules for this item.”
+- Do not block custom plants.
+- Do not let custom entries break the garden map or schedule.
+- If planting timing is unknown, place the item in a “Custom planning note” section rather than inventing detailed timing.
+
+4. Add multiple garden areas
+
+Add the ability for users to define more than one garden area.
+
+Examples:
+- backyard garden bed
+- front yard bed
+- side yard bed
+- plant pots
+- raised bed
+- balcony containers
+- herb planter
+
+Requirements:
+- User can add one or more garden areas.
+- Each area should have:
+  - area name
+  - dimensions
+  - unit system support: imperial / metric
+  - sunlight level
+  - soil/container type
+- Each area should generate its own garden map or clearly separated section in the generated plan.
+- The weekly schedule can remain combined, but actions should identify which garden area they apply to.
+- If this is too large to fully implement, build a simple version where users can add multiple areas and the generated plan displays separate map sections for each area.
+
+5. Expand sunlight levels and add info tooltips
+
+Update sunlight options when creating or editing a garden area.
+
+Sunlight options:
+- Full sun
+- Part sun
+- Part shade
+- Full shade
+- Dappled shade
+
+Add an info icon or tooltip beside each sunlight option explaining the meaning.
+
+Use the following definitions exactly or very close to them:
+
+Full sun:
+“The area gets 6+ hours of direct sunlight per day. Best for most vegetables, herbs, and sun-loving flowers.”
+
+Part sun:
+“The area gets 4–6 hours of direct sunlight per day. Often works well for plants that like the sun but may need protection from intense afternoon heat.”
+
+Part shade:
+“The area gets 2–4 hours of direct sunlight per day, or filtered light for much of the day. Good for plants that prefer some sun but not full exposure.”
+
+Full shade:
+“The area gets less than 2 hours of direct sunlight per day. This does not mean total darkness; it still needs bright, indirect outdoor light.”
+
+Dappled shade:
+“Sunlight is filtered through trees or structures, creating shifting patches of light and shade. Common under trees or near fences/pergolas.”
+
+6. Remove print button
+
+Remove the current print button and any prominent print-focused UI.
+
+Replace it with export/share functionality.
+
+Add two buttons:
+- Download Plan
+- Share Plan
+
+Download Plan requirements:
+- Creates a downloadable copy of the generated plan.
+- Acceptable MVP formats:
+  - JSON file, or
+  - text/markdown file, or
+  - simple HTML file
+- Prefer a user-friendly text or markdown summary if easy to implement.
+- The file should include:
+  - selected growing region
+  - garden areas
+  - selected plants
+  - garden map summary
+  - weekly schedule
+  - weather-risk notes if available
+
+Share Plan requirements:
+- Use the Web Share API if supported by the browser.
+- Button label: “Share Plan”
+- Share title should be “My GrowIt Garden Plan”
+- Share text should summarize the plan.
+- If Web Share API is not supported, fall back to copying a text summary to clipboard and show confirmation:
+  “Plan summary copied to clipboard.”
+- Do not add social platform-specific integrations.
+
+7. Fix Garden Map plant table fit
+
+The plant table under “Garden Map” must fit the screen properly.
+
+Requirements:
+- It must be responsive on mobile.
+- No horizontal overflow beyond the viewport unless intentionally wrapped in a scroll container.
+- On small screens, convert table rows into stacked cards if needed.
+- Ensure text wraps cleanly.
+- Avoid tiny unreadable font sizes.
+- The table/card layout should show:
+  - plant name
+  - category
+  - area
+  - action type
+  - spacing or notes
+- Make sure the garden map section and plant table are usable on a phone-width screen.
+
+8. Fix landing page logo visibility
+
+The current logo is transparent against the landing page background and does not look good.
+
+Suggest and implement the best fix.
+
+Preferred options:
+- Place the logo/wordmark inside a solid or semi-opaque cream card.
+- Or use a non-transparent wordmark treatment with strong contrast.
+- Or simplify the logo to a text-based “GrowIt” wordmark in a readable colour.
+- Ensure the logo is clearly visible on the landing page.
+- Do not use a transparent logo directly over a busy background unless contrast is excellent.
+
+9. Keep existing good features stable
+
+Do not break:
+- calendar / weekly schedule, which is currently good
+- location-aware positioning
+- Calgary as default demo region
+- weather-risk feature if already implemented
+- mobile-first app experience
+- vegetables, herbs, and flowers support
+- imperial/metric conversion
+
+10. Final check after implementation
+
+After making these changes, provide a concise checklist showing:
+- app renamed to GrowIt
+- plant multi-select works
+- custom plant entry works
+- multiple garden areas work
+- sunlight info tooltips work
+- print button removed
+- download/share buttons work
+- garden map plant table fits mobile screen
+- landing page logo is readable
+- calendar still works
+- app still runs without errors

@@ -1,11 +1,6 @@
 /**
- * GrowIt+ — Single source of truth for all TypeScript types.
- * Import from here instead of from individual data/utility files.
+ * GrowIt — Single source of truth for all TypeScript types.
  */
-
-// ---------------------------------------------------------------------------
-// Primitives
-// ---------------------------------------------------------------------------
 
 export type PlantType = "vegetable" | "herb" | "flower";
 
@@ -18,7 +13,13 @@ export type ActionType =
   | "bloom_watch"
   | "harvest_soon";
 
-export type SunlightLevel = "Full Sun" | "Partial Shade" | "Full Shade";
+export type SunlightLevel =
+  | "Full Sun"
+  | "Part Sun"
+  | "Partial Shade"    // kept for backward compat with plant minSunlight values
+  | "Part Shade"
+  | "Dappled Shade"
+  | "Full Shade";
 
 export type SoilType =
   | "Raised Bed"
@@ -33,34 +34,49 @@ export type PlantPreference =
   | "Flowers + Herbs"
   | "Flowers Only";
 
-/** The measurement system chosen by the user for input and display. */
 export type UnitSystem = "imperial" | "metric";
+
+// ---------------------------------------------------------------------------
+// Garden Area — one distinct growing space (bed, container group, etc.)
+// ---------------------------------------------------------------------------
+
+export interface GardenArea {
+  id: string;
+  name: string;
+  lengthFt: number;
+  widthFt: number;
+  sunlight: SunlightLevel;
+  soilType: SoilType;
+}
+
+// ---------------------------------------------------------------------------
+// Custom plant — user-entered, not on the whitelist
+// ---------------------------------------------------------------------------
+
+export interface CustomPlant {
+  id: string;
+  name: string;
+  category: PlantType | "other";
+  notes?: string;
+}
 
 // ---------------------------------------------------------------------------
 // Growing Region
 // ---------------------------------------------------------------------------
 
-/**
- * A location module with frost dates and growing-zone data.
- * Calgary is the default beachhead region; others are selectable.
- */
 export interface GrowingRegion {
-  id: string;               // URL-safe slug, e.g. "calgary"
-  label: string;            // Display name, e.g. "Calgary"
-  province: string;         // e.g. "Alberta"
-  lastSpringFrost: string;  // e.g. "May 14"
-  firstFallFrost: string;   // e.g. "Sep 17"
-  zone: string;             // e.g. "3b–4a"
+  id: string;
+  label: string;
+  province: string;
+  lastSpringFrost: string;
+  firstFallFrost: string;
+  zone: string;
 }
 
 // ---------------------------------------------------------------------------
 // Plant
 // ---------------------------------------------------------------------------
 
-/**
- * Garden-support benefits for flower items.
- * Flowers are treated as functional garden plants, not only decorative.
- */
 export interface FlowerBenefits {
   pollinatorSupport: boolean;
   pestDeterrence: boolean;
@@ -69,19 +85,18 @@ export interface FlowerBenefits {
   notes?: string;
 }
 
-/** A single plant in the regional whitelist. */
 export interface PlantItem {
-  id: string;                   // URL-safe slug, e.g. "tomatoes"
+  id: string;
   name: string;
   type: PlantType;
   emoji: string;
-  abbr: string;                 // 3-letter grid abbreviation
-  spacingFt: number;            // square-foot spacing requirement
-  weeksBeforeFrost: number;     // weeks before last spring frost to direct-sow
+  abbr: string;
+  spacingFt: number;
+  weeksBeforeFrost: number;
   directSow: boolean;
   startIndoors: boolean;
   daysToMaturity: number;
-  indoorWeeksAhead?: number;    // weeks before last frost to start indoors
+  indoorWeeksAhead?: number;
   actionType: ActionType;
   minSunlight: SunlightLevel;
   isWhitelisted: boolean;
@@ -94,25 +109,27 @@ export interface PlantItem {
 // Garden Profile (questionnaire inputs)
 // ---------------------------------------------------------------------------
 
-/**
- * All user inputs collected by the questionnaire.
- * Dimensions are always stored internally in feet for calculations.
- */
 export interface GardenProfile {
-  region: string;             // key into GROWING_REGIONS, e.g. "Calgary"
-  lengthFt: number;           // internal feet value (always)
+  region: string;
+  unitPreference: UnitSystem;
+  // Primary area convenience fields — mirrors areas[0], kept for backward compat
+  lengthFt: number;
   widthFt: number;
   sunlight: SunlightLevel;
   soilType: SoilType;
-  plantPreference: PlantPreference;
-  unitPreference: UnitSystem; // the unit the user chose for input/display
+  // Multi-area support (always ≥ 1; areas[0] must match the primary fields)
+  areas: GardenArea[];
+  // Plant selection (empty = use smart deterministic logic)
+  selectedPlantIds: string[];
+  customPlants: CustomPlant[];
+  // Optional legacy field (used when selectedPlantIds is empty and no AI)
+  plantPreference?: PlantPreference;
 }
 
 // ---------------------------------------------------------------------------
 // Garden Map
 // ---------------------------------------------------------------------------
 
-/** A single cell in the visual garden grid. */
 export interface MapCell {
   plant: PlantItem | null;
   hasConflict: boolean;
@@ -123,26 +140,21 @@ export interface MapCell {
 // Weekly Schedule
 // ---------------------------------------------------------------------------
 
-/** A single planting action within a weekly schedule entry. */
 export interface PlantAction {
-  plant?: PlantItem;        // absent for maintenance/general actions
+  plant?: PlantItem;
   actionType: ActionType;
   description: string;
-  timingNote?: string;      // plain-language frost-relative explanation
-  depthNote?: string;       // sowing depth / spacing in user's unit
+  timingNote?: string;
+  depthNote?: string;
 }
 
-/**
- * One week in the planting calendar, from today through first fall frost.
- * Quiet weeks (no actions) are included per PRD requirement.
- */
 export interface WeeklyScheduleItem {
-  weekLabel: string;        // e.g. "Week of May 12"
-  weekStartDate: string;    // ISO date string for serialization
+  weekLabel: string;
+  weekStartDate: string;
   isCurrent: boolean;
   hasActions: boolean;
   actions: PlantAction[];
-  notes: string;            // summary or "No actions this week"
+  notes: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -157,28 +169,36 @@ export interface ValidationResult {
 }
 
 // ---------------------------------------------------------------------------
+// Per-area plan — one grid per garden area
+// ---------------------------------------------------------------------------
+
+export interface AreaPlan {
+  area: GardenArea;
+  selectedPlants: PlantItem[];
+  grid: MapCell[][];
+}
+
+// ---------------------------------------------------------------------------
 // Generated Plan
 // ---------------------------------------------------------------------------
 
-/**
- * The complete output returned by the plan generator.
- * Serialization-safe: no Sets or Date objects.
- */
 export interface GeneratedPlan {
   id: string;
-  generatedAt: string;              // ISO date string
+  generatedAt: string;
   generationMode: "deterministic" | "ai";
-  fallbackReason?: string;          // set when AI was attempted but fell back to deterministic
+  fallbackReason?: string;
   profile: GardenProfile;
   region: GrowingRegion;
   selectedPlants: PlantItem[];
   grid: MapCell[][];
   schedule: WeeklyScheduleItem[];
-  conflicts: string[];              // plant names with adjacent grid conflicts
+  conflicts: string[];
   validation: ValidationResult;
-  timingExplanation: string;        // human-readable growing season summary
-  companionNotes: string[];         // why specific flowers/plants were included
-  cautionNotes: string[];           // plants excluded or included with caveats
+  timingExplanation: string;
+  companionNotes: string[];
+  cautionNotes: string[];
+  // Per-area grids (parallel to profile.areas)
+  areaPlans: AreaPlan[];
 }
 
 // ---------------------------------------------------------------------------
@@ -187,8 +207,8 @@ export interface GeneratedPlan {
 
 export interface UnitSettings {
   system: UnitSystem;
-  label: string;        // "feet" | "metres"
-  abbr: string;         // "ft" | "m"
-  maxInput: number;     // 20 | 6.1
-  capDisplay: string;   // "20ft × 20ft" | "6.1m × 6.1m"
+  label: string;
+  abbr: string;
+  maxInput: number;
+  capDisplay: string;
 }

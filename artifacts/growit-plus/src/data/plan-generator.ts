@@ -1,9 +1,10 @@
 /**
- * GrowIt+ Deterministic Plan Generator — v3
+ * GrowIt Deterministic Plan Generator — v4
  * Selects plants with smart flower logic, builds the garden grid (adjacency companion
  * validation), generates a week-by-week schedule anchored to regional frost dates,
  * and produces human-readable timing + companion notes for the UI.
- * PRD V10 Section 12.2 — deterministic fallback generator. No AI API required.
+ * Supports user-selected plant lists, custom plants, and multiple garden areas.
+ * No AI API required — fully deterministic fallback.
  */
 
 import type {
@@ -14,26 +15,116 @@ import type {
   WeeklyScheduleItem,
   PlantAction,
   ValidationResult,
+  SunlightLevel,
+  GardenArea,
+  AreaPlan,
+  CustomPlant,
+  PlantType,
 } from "@/types/garden";
-import { VEGETABLES, HERBS, FLOWERS, type PlantItem } from "@/data/plants";
+import { VEGETABLES, HERBS, FLOWERS, ALL_PLANTS, type PlantItem } from "@/data/plants";
 import { detectConflicts, areConflicting } from "@/data/companion-rules";
 
 export type { GardenProfile, GrowingRegion, GeneratedPlan, MapCell, WeeklyScheduleItem, PlantAction, PlantItem };
 
 // ---------------------------------------------------------------------------
+// Sunlight compatibility
+// ---------------------------------------------------------------------------
+
+const SUNLIGHT_SCORE: Record<SunlightLevel, number> = {
+  "Full Sun":      5,
+  "Part Sun":      4,
+  "Partial Shade": 3,
+  "Part Shade":    3,
+  "Dappled Shade": 2,
+  "Full Shade":    1,
+};
+
+/**
+ * Returns true if the garden's sunlight level can support a plant with the
+ * given minimum sunlight requirement.
+ * Part Sun (score 4) is allowed a 1-level tolerance so it can support plants
+ * that nominally need Full Sun (score 5) — 4 ≥ 5−1 = 4.
+ */
+function sunlightCompatible(garden: SunlightLevel, plantMin: SunlightLevel): boolean {
+  const gs = SUNLIGHT_SCORE[garden] ?? 3;
+  const ps = SUNLIGHT_SCORE[plantMin] ?? 3;
+  return gs >= ps - 1;
+}
+
+// ---------------------------------------------------------------------------
+// Custom plant helper
+// ---------------------------------------------------------------------------
+
+function customToPlantItem(cp: CustomPlant): PlantItem {
+  const type: PlantType = cp.category === "other" ? "vegetable" : cp.category;
+  return {
+    id: cp.id,
+    name: cp.name,
+    type,
+    emoji: "🌱",
+    abbr: cp.name.slice(0, 3).toUpperCase(),
+    spacingFt: 1,
+    directSow: true,
+    startIndoors: false,
+    daysToMaturity: 60,
+    weeksBeforeFrost: 0,
+    actionType: "direct_sow",
+    minSunlight: "Partial Shade",
+    isWhitelisted: false,
+    riskLevel: "normal",
+    notes: [
+      "Custom entry. GrowIt does not yet have verified local growing rules for this item.",
+      cp.notes,
+    ].filter(Boolean).join(" "),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Profile normalisation — backward compat for old saved plans
+// ---------------------------------------------------------------------------
+
+function normalizeProfile(profile: GardenProfile): GardenProfile {
+  const areas: GardenArea[] = profile.areas?.length
+    ? profile.areas
+    : [{
+        id: "area-primary",
+        name: "My Garden",
+        lengthFt: profile.lengthFt,
+        widthFt:  profile.widthFt,
+        sunlight: profile.sunlight,
+        soilType: profile.soilType,
+      }];
+  return {
+    ...profile,
+    areas,
+    selectedPlantIds: profile.selectedPlantIds ?? [],
+    customPlants:     profile.customPlants ?? [],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Per-area plan building
+// ---------------------------------------------------------------------------
+
+function buildAreaPlans(areas: GardenArea[], allPlants: PlantItem[]): AreaPlan[] {
+  return areas.map(area => {
+    const areaPlants = allPlants.filter(p => sunlightCompatible(area.sunlight, p.minSunlight));
+    const grid = buildGrid(areaPlants, area.lengthFt, area.widthFt);
+    return { area, selectedPlants: areaPlants, grid };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-/**
- * Generate a complete deterministic garden plan from a profile + region.
- * No API calls — pure synchronous logic suitable for demo resilience.
- */
 export function generatePlan(profile: GardenProfile, region: GrowingRegion): GeneratedPlan {
-  const { plants: selectedPlants, cautionNotes } = selectPlants(profile);
-  const grid       = buildGrid(selectedPlants, profile.lengthFt, profile.widthFt);
-  const schedule   = buildSchedule(selectedPlants, region, profile);
+  const p = normalizeProfile(profile);
+  const { plants: selectedPlants, cautionNotes } = selectPlants(p);
+  const grid     = buildGrid(selectedPlants, p.lengthFt, p.widthFt);
+  const schedule = buildSchedule(selectedPlants, region, p);
+  const areaPlans = buildAreaPlans(p.areas, selectedPlants);
 
-  // Collect names of plants that have an adjacent conflict in the grid
   const conflictSet = new Set<string>();
   for (const row of grid) {
     for (const cell of row) {
@@ -42,25 +133,25 @@ export function generatePlan(profile: GardenProfile, region: GrowingRegion): Gen
   }
   const conflicts = Array.from(conflictSet);
 
-  detectConflicts(selectedPlants.map(p => p.name)); // side-effect free; kept for banner
+  detectConflicts(selectedPlants.map(pl => pl.name));
 
   const validation: ValidationResult = {
-    plantWhitelistPassed:    selectedPlants.every(p => p.isWhitelisted),
+    plantWhitelistPassed:     selectedPlants.every(pl => pl.isWhitelisted),
     companionValidationPassed: conflicts.length === 0,
-    adjacentConflictCount:   conflicts.length,
+    adjacentConflictCount:    conflicts.length,
     warnings: conflicts.length > 0
       ? [`Adjacent companion conflicts: ${conflicts.join(", ")}`]
       : [],
   };
 
-  const timingExplanation = buildTimingExplanation(profile, region, selectedPlants);
+  const timingExplanation = buildTimingExplanation(p, region, selectedPlants);
   const companionNotes    = buildCompanionNotes(selectedPlants);
 
   return {
     id: `plan-${Date.now()}`,
     generatedAt: new Date().toISOString(),
     generationMode: "deterministic",
-    profile,
+    profile: p,
     region,
     selectedPlants,
     grid,
@@ -70,6 +161,7 @@ export function generatePlan(profile: GardenProfile, region: GrowingRegion): Gen
     timingExplanation,
     companionNotes,
     cautionNotes,
+    areaPlans,
   };
 }
 
@@ -77,9 +169,6 @@ export function generatePlan(profile: GardenProfile, region: GrowingRegion): Gen
  * Build a complete plan from a pre-selected list of plants.
  * Used by the AI path: plant selection comes from the AI, but all structural
  * operations (grid, schedule, validation) remain deterministic.
- *
- * @param overrides - Optional AI-generated narrative text. Falls back to the
- *   deterministic builders if any field is absent.
  */
 export function buildPlanFromSelection(
   profile:  GardenProfile,
@@ -92,8 +181,10 @@ export function buildPlanFromSelection(
     fallbackReason?:    string;
   },
 ): GeneratedPlan {
-  const grid     = buildGrid(selectedPlants, profile.lengthFt, profile.widthFt);
-  const schedule = buildSchedule(selectedPlants, region, profile);
+  const p    = normalizeProfile(profile);
+  const grid = buildGrid(selectedPlants, p.lengthFt, p.widthFt);
+  const schedule  = buildSchedule(selectedPlants, region, p);
+  const areaPlans = buildAreaPlans(p.areas, selectedPlants);
 
   const conflictSet = new Set<string>();
   for (const row of grid) {
@@ -104,7 +195,7 @@ export function buildPlanFromSelection(
   const conflicts = Array.from(conflictSet);
 
   const validation: ValidationResult = {
-    plantWhitelistPassed:     selectedPlants.every(p => p.isWhitelisted),
+    plantWhitelistPassed:     selectedPlants.every(pl => pl.isWhitelisted),
     companionValidationPassed: conflicts.length === 0,
     adjacentConflictCount:    conflicts.length,
     warnings: conflicts.length > 0
@@ -113,7 +204,7 @@ export function buildPlanFromSelection(
   };
 
   const timingExplanation = overrides?.timingExplanation
-    || buildTimingExplanation(profile, region, selectedPlants);
+    || buildTimingExplanation(p, region, selectedPlants);
   const companionNotes    = overrides?.companionNotes
     || buildCompanionNotes(selectedPlants);
   const cautionNotes      = overrides?.cautionNotes ?? [];
@@ -123,7 +214,7 @@ export function buildPlanFromSelection(
     generatedAt:    new Date().toISOString(),
     generationMode: "ai",
     fallbackReason: overrides?.fallbackReason,
-    profile,
+    profile: p,
     region,
     selectedPlants,
     grid,
@@ -133,6 +224,7 @@ export function buildPlanFromSelection(
     timingExplanation,
     companionNotes,
     cautionNotes,
+    areaPlans,
   };
 }
 
@@ -140,28 +232,18 @@ export function buildPlanFromSelection(
 // Smart flower selection
 // ---------------------------------------------------------------------------
 
-/**
- * Returns the flowers appropriate for the given garden profile, along with
- * caution notes for excluded or risky choices.
- *
- * Rules:
- *  - Always safe (full sun OR partial shade): marigolds, pansies, violas
- *  - Full sun or partial shade only: calendula, nasturtiums
- *  - Full sun only, container-safe: zinnias
- *  - Full sun + not container + ≥ 6 sq ft: cosmos, sweet peas
- *  - Full sun + not container + ≥ 9 sq ft: sunflowers
- *  - Full sun + raised bed or loam: lavender (with zone-3 caution note)
- */
 function selectFlowersForPlan(
   profile: GardenProfile
 ): { flowers: PlantItem[]; cautions: string[] } {
-  const area       = profile.lengthFt * profile.widthFt;
-  const sun        = profile.sunlight;
-  const soil       = profile.soilType;
+  const area        = profile.lengthFt * profile.widthFt;
+  const sun         = profile.sunlight;
+  const soil        = profile.soilType;
   const isContainer = soil === "Container/Pots";
   const isRaisedBed = soil === "Raised Bed";
   const isLoam      = soil === "In-Ground Loam";
   const isClay      = soil === "In-Ground Clay";
+  const isFullOrPartSun = sun === "Full Sun" || sun === "Part Sun";
+  const isVeryShady     = sun === "Full Shade" || sun === "Dappled Shade";
 
   const flowers: PlantItem[] = [];
   const cautions: string[]   = [];
@@ -172,76 +254,79 @@ function selectFlowersForPlan(
     return p;
   };
 
-  // MARIGOLDS — top companion; full sun or partial shade, any size, container-friendly
-  if (sun !== "Full Shade") flowers.push(f("marigolds"));
+  // MARIGOLDS — top companion; tolerant of most light conditions
+  if (!isVeryShady) flowers.push(f("marigolds"));
 
-  // PANSIES — cool-season; partial shade tolerant; container-friendly
+  // PANSIES — cool-season; shade tolerant; container-friendly
   if (sun !== "Full Shade") flowers.push(f("pansies"));
 
-  // VIOLAS — cool-season; partial shade tolerant; container-friendly
+  // VIOLAS — cool-season; shade tolerant; container-friendly
   if (sun !== "Full Shade") flowers.push(f("violas"));
 
-  // CALENDULA — full sun or partial shade; companion pest deterrent
-  if (sun === "Full Sun" || sun === "Partial Shade") flowers.push(f("calendula"));
-
-  // NASTURTIUMS — full sun or partial shade; trap crop + edible
-  if (sun === "Full Sun" || sun === "Partial Shade") flowers.push(f("nasturtiums"));
-
-  // ZINNIAS — full sun only; container-friendly in small pots
-  if (sun === "Full Sun") {
-    flowers.push(f("zinnias"));
-  } else if (sun === "Partial Shade") {
-    cautions.push("Zinnias need full sun to bloom well — excluded for partial shade. Violas and pansies are your best bet.");
+  // CALENDULA — full/part sun or moderate shade
+  if (isFullOrPartSun || sun === "Partial Shade" || sun === "Part Shade") {
+    flowers.push(f("calendula"));
   }
 
-  // COSMOS — full sun + not container + enough room to branch (≥ 6 sq ft)
-  if (sun === "Full Sun" && !isContainer && area >= 6) {
+  // NASTURTIUMS — full/part sun or moderate shade; trap crop + edible
+  if (isFullOrPartSun || sun === "Partial Shade" || sun === "Part Shade") {
+    flowers.push(f("nasturtiums"));
+  }
+
+  // ZINNIAS — full or part sun only
+  if (isFullOrPartSun) {
+    flowers.push(f("zinnias"));
+  } else {
+    cautions.push("Zinnias need full sun or part sun to bloom well — excluded for your light conditions. Violas and pansies are your best bet.");
+  }
+
+  // COSMOS — full/part sun + not container + enough room
+  if (isFullOrPartSun && !isContainer && area >= 6) {
     flowers.push(f("cosmos"));
-  } else if (sun === "Full Sun" && isContainer) {
-    cautions.push("Cosmos grow 60–90 cm tall and aren't suited for containers — try zinnias instead.");
-  } else if (sun === "Full Sun" && area < 6) {
+  } else if (isFullOrPartSun && isContainer) {
+    cautions.push("Cosmos grow tall and aren't suited for containers — try zinnias instead.");
+  } else if (isFullOrPartSun && area < 6) {
     cautions.push("Cosmos excluded — your garden is under 6 sq ft, too small for their spread.");
   }
 
-  // SUNFLOWERS — full sun + not container + garden ≥ 9 sq ft
-  if (sun === "Full Sun" && !isContainer && area >= 9) {
+  // SUNFLOWERS — full/part sun + not container + ≥ 9 sq ft
+  if (isFullOrPartSun && !isContainer && area >= 9) {
     flowers.push(f("sunflowers"));
-  } else if (sun === "Full Sun" && !isContainer && area < 9) {
+  } else if (isFullOrPartSun && !isContainer && area < 9) {
     cautions.push("Sunflowers need full sun and at least 9 sq ft of open ground — consider them when you expand the garden.");
-  } else if (sun === "Full Sun" && isContainer) {
+  } else if (isFullOrPartSun && isContainer) {
     cautions.push("Standard sunflowers are too large for containers — dwarf varieties exist but aren't on the whitelist yet.");
   }
 
-  // SWEET PEAS — full sun + climbing space (not containers) + ≥ 6 sq ft
-  if (sun === "Full Sun" && !isContainer && area >= 6) {
+  // SWEET PEAS — full/part sun + not container + ≥ 6 sq ft
+  if (isFullOrPartSun && !isContainer && area >= 6) {
     flowers.push(f("sweet-peas"));
-  } else if (sun === "Full Sun" && isContainer) {
+  } else if (isFullOrPartSun && isContainer) {
     cautions.push("Sweet Peas need a trellis to climb — not suited to containers without vertical support.");
   }
 
-  // LAVENDER — full sun + well-drained soil (raised bed or loam); zone-3 caution always
-  if (sun === "Full Sun" && (isRaisedBed || isLoam)) {
+  // LAVENDER — full/part sun + well-drained soil; zone-3 caution always
+  if (isFullOrPartSun && (isRaisedBed || isLoam)) {
     flowers.push({ ...f("lavender"), riskLevel: "high" });
     cautions.push(
       "Lavender included with a caution: use zone-4 hardy varieties only (Hidcote, Munstead). " +
       "Needs excellent drainage — perfect for raised beds and loam. May not overwinter in zone 3b without mulching."
     );
-  } else if (sun === "Full Sun" && isClay) {
+  } else if (isFullOrPartSun && isClay) {
     cautions.push(
       "Lavender excluded — it struggles in clay soil (poor drainage causes root rot). " +
       "A raised bed or loam mix would make it thrive."
     );
-  } else if (sun === "Full Sun" && isContainer) {
+  } else if (isFullOrPartSun && isContainer) {
     cautions.push(
       "Lavender can be grown in large containers (30 cm+ diameter) with gritty, well-draining mix. " +
       "Bring indoors or mulch heavily to overwinter in zone 3."
     );
   }
 
-  // Full shade — very limited flower options
-  if (sun === "Full Shade") {
+  if (isVeryShady) {
     cautions.push(
-      "Full shade limits flowering plants. Only pansies and violas tolerate low light. " +
+      "Very low light limits flowering plants. Only pansies and violas tolerate low-light conditions. " +
       "Consider moving containers to a brighter spot if possible."
     );
   }
@@ -250,7 +335,7 @@ function selectFlowersForPlan(
 }
 
 // ---------------------------------------------------------------------------
-// Plant selection — builds the final list used for the grid and schedule
+// Plant selection — user-chosen or smart deterministic
 // ---------------------------------------------------------------------------
 
 interface SelectionResult {
@@ -258,17 +343,87 @@ interface SelectionResult {
   cautionNotes: string[];
 }
 
+/** Select from the user's explicit plant ID list. */
+function selectFromUserList(profile: GardenProfile, customItems: PlantItem[]): SelectionResult {
+  const totalArea = profile.lengthFt * profile.widthFt;
+  const cautions: string[] = [];
+
+  const requested = (profile.selectedPlantIds ?? [])
+    .map(id => ALL_PLANTS.find(p => p.id === id))
+    .filter((p): p is PlantItem => p !== undefined);
+
+  // Sunlight filter
+  const sunOk  = requested.filter(p => sunlightCompatible(profile.sunlight, p.minSunlight));
+  const sunBad = requested.filter(p => !sunlightCompatible(profile.sunlight, p.minSunlight));
+  if (sunBad.length > 0) {
+    cautions.push(
+      `${sunBad.map(p => p.name).join(", ")} ${sunBad.length === 1 ? "needs" : "need"} ` +
+      `more sunlight than your ${profile.sunlight} garden offers — excluded from this plan.`
+    );
+  }
+
+  // Container filter
+  let pool = sunOk;
+  if (profile.soilType === "Container/Pots") {
+    const large = pool.filter(p => p.spacingFt > 1);
+    pool = pool.filter(p => p.spacingFt <= 1);
+    if (large.length > 0) {
+      cautions.push(
+        `${large.map(p => p.name).join(", ")} ${large.length === 1 ? "is" : "are"} ` +
+        `too large for containers — excluded. Consider a raised bed or in-ground area.`
+      );
+    }
+  }
+
+  // Merge custom plants and fit to area
+  const allCandidates = dedupeById([...pool, ...customItems]);
+  const fitted   = fitToArea(allCandidates, totalArea);
+  const excluded = allCandidates.filter(
+    p => !fitted.some(f => f.id === p.id) && !customItems.some(c => c.id === p.id)
+  );
+
+  if (excluded.length > 0) {
+    cautions.push(
+      `Some of your selections didn't fit in your ${totalArea} sq ft space and were left out: ` +
+      `${excluded.map(p => p.name).join(", ")}. ` +
+      `Try a larger garden area, or reduce your plant selection to fit them all.`
+    );
+  }
+
+  return { plants: fitted, cautionNotes: cautions };
+}
+
+/** Wrapper: route to user selection or smart selection as appropriate. */
 function selectPlants(profile: GardenProfile): SelectionResult {
-  const pref     = profile.plantPreference;
-  const area     = profile.lengthFt * profile.widthFt;
+  const customItems   = (profile.customPlants ?? []).map(customToPlantItem);
+  const customCautions = customItems.map(cp =>
+    `"${cp.name}" is a custom plant. GrowIt does not yet have verified local growing rules for this item. ` +
+    `The schedule timing shown is approximate — research the best planting window for your specific variety.`
+  );
+
+  if (profile.selectedPlantIds && profile.selectedPlantIds.length > 0) {
+    const { plants, cautionNotes } = selectFromUserList(profile, customItems);
+    return { plants, cautionNotes: [...cautionNotes, ...customCautions] };
+  }
+
+  // Smart deterministic selection
+  const { plants, cautionNotes } = smartSelectPlants(profile);
+  return {
+    plants: [...plants, ...customItems],
+    cautionNotes: [...cautionNotes, ...customCautions],
+  };
+}
+
+/** Smart plant selection based on plantPreference (legacy) or inferred category mix. */
+function smartSelectPlants(profile: GardenProfile): SelectionResult {
+  const pref       = profile.plantPreference ?? "Vegetables + Herbs + Flowers";
+  const area       = profile.lengthFt * profile.widthFt;
   const needsFlowers = pref !== "Vegetables Only" && pref !== "Vegetables + Herbs";
 
-  // Gather flowers with caution notes
   const { flowers: availableFlowers, cautions } = needsFlowers
     ? selectFlowersForPlan(profile)
     : { flowers: [], cautions: [] };
 
-  // ── Flowers Only ────────────────────────────────────────────────────────
   if (pref === "Flowers Only") {
     const pool = fitToArea(availableFlowers, area);
     return {
@@ -277,7 +432,6 @@ function selectPlants(profile: GardenProfile): SelectionResult {
     };
   }
 
-  // ── Flowers + Herbs ──────────────────────────────────────────────────────
   if (pref === "Flowers + Herbs") {
     const herbs    = filterByConditions([...HERBS], profile);
     const herbSel  = fitToArea(herbs, area * 0.5);
@@ -289,14 +443,9 @@ function selectPlants(profile: GardenProfile): SelectionResult {
     };
   }
 
-  // ── Vegetable-based plans ────────────────────────────────────────────────
   let vegHerbPool: PlantItem[] = filterByConditions([...VEGETABLES], profile);
-
   if (pref === "Vegetables + Herbs" || pref === "Vegetables + Herbs + Flowers") {
-    vegHerbPool = dedupeById([
-      ...vegHerbPool,
-      ...filterByConditions([...HERBS], profile),
-    ]);
+    vegHerbPool = dedupeById([...vegHerbPool, ...filterByConditions([...HERBS], profile)]);
   }
 
   const baseAllocation = pref === "Vegetables + Herbs + Flowers" ? area * 0.65 : area * 0.85;
@@ -320,40 +469,20 @@ function selectPlants(profile: GardenProfile): SelectionResult {
 // Shared filtering helpers
 // ---------------------------------------------------------------------------
 
-/** Filter a pool by sunlight, container, and small-garden rules. */
 function filterByConditions(pool: PlantItem[], profile: GardenProfile): PlantItem[] {
   const area = profile.lengthFt * profile.widthFt;
 
-  // Sunlight: Full Shade allows only partial-shade-tolerant plants
-  const filtered = pool.filter(p => {
-    if (profile.sunlight === "Full Sun") return true;
-    if (profile.sunlight === "Partial Shade") return true; // most edibles survive partial shade
-    return p.minSunlight === "Partial Shade"; // Full Shade: strict
-  });
+  const filtered = pool.filter(p => sunlightCompatible(profile.sunlight, p.minSunlight));
 
-  // Container gardens: compact plants only (≤ 1 sq ft spacing)
   if (profile.soilType === "Container/Pots") {
     return filtered.filter(p => p.spacingFt <= 1);
   }
-
-  // Very small garden (< 8 sq ft): prioritise compact plants
-  if (area < 8) {
-    return filtered.filter(p => p.spacingFt <= 1);
-  }
-
-  // Small garden (8–16 sq ft): moderate plants only
-  if (area < 16) {
-    return filtered.filter(p => p.spacingFt <= 2);
-  }
+  if (area < 8)  return filtered.filter(p => p.spacingFt <= 1);
+  if (area < 16) return filtered.filter(p => p.spacingFt <= 2);
 
   return filtered;
 }
 
-/**
- * Greedily add plants from a pool (sorted smallest spacing first)
- * until cumulative spacing exceeds the target area.
- * Always includes at least 1 plant even if area is tiny.
- */
 function fitToArea(pool: PlantItem[], targetArea: number): PlantItem[] {
   const sorted  = [...pool].sort((a, b) => a.spacingFt - b.spacingFt);
   const result: PlantItem[] = [];
@@ -380,23 +509,22 @@ function dedupeById(plants: PlantItem[]): PlantItem[] {
 }
 
 // ---------------------------------------------------------------------------
-// Timing explanation — human-readable growing season summary
+// Timing explanation
 // ---------------------------------------------------------------------------
 
 function buildTimingExplanation(
   profile: GardenProfile,
-  region: GrowingRegion,
-  plants: PlantItem[]
+  region:  GrowingRegion,
+  plants:  PlantItem[]
 ): string {
-  const year = new Date().getFullYear();
+  const year           = new Date().getFullYear();
   const lastFrost      = parseFrostDate(region.lastSpringFrost, year);
-  const firstFallFrost = parseFrostDate(region.firstFallFrost, year);
+  const firstFallFrost = parseFrostDate(region.firstFallFrost,  year);
 
   const seasonWeeks = Math.round(
     (firstFallFrost.getTime() - lastFrost.getTime()) / (7 * 24 * 60 * 60 * 1000)
   );
 
-  // Earliest indoor start
   const indoorStarters = plants.filter(p => p.startIndoors && p.indoorWeeksAhead);
   const maxIndoor = indoorStarters.length > 0
     ? Math.max(...indoorStarters.map(p => p.indoorWeeksAhead!))
@@ -409,7 +537,7 @@ function buildTimingExplanation(
   if (maxIndoor > 0) {
     const indoorStart = new Date(lastFrost);
     indoorStart.setDate(indoorStart.getDate() - maxIndoor * 7);
-    const month = indoorStart.toLocaleDateString("en-CA", { month: "long" });
+    const month       = indoorStart.toLocaleDateString("en-CA", { month: "long" });
     const topStarters = indoorStarters
       .sort((a, b) => (b.indoorWeeksAhead ?? 0) - (a.indoorWeeksAhead ?? 0))
       .slice(0, 2)
@@ -419,7 +547,6 @@ function buildTimingExplanation(
       `${maxIndoor} weeks before your frost date.`;
   }
 
-  // Earliest direct-sow items (cool-season, before frost)
   const coolSeason = plants.filter(p => p.directSow && p.weeksBeforeFrost >= 2);
   if (coolSeason.length > 0) {
     const names = coolSeason.slice(0, 3).map(p => p.name.toLowerCase());
@@ -427,18 +554,22 @@ function buildTimingExplanation(
       ` Cool-season crops like ${names.join(", ")} can go outside 2–4 weeks before ${region.lastSpringFrost}.`;
   }
 
-  // Sunlight caveat
-  if (profile.sunlight === "Full Shade") {
+  const sun = profile.sunlight;
+  if (sun === "Full Shade") {
     explanation += " Full shade limits options significantly — consider shade-tolerant greens and cool-season flowers only.";
-  } else if (profile.sunlight === "Partial Shade") {
-    explanation += " Partial shade suits leafy greens and herbs well; fruiting crops (tomatoes, cucumbers) may yield less than in full sun.";
+  } else if (sun === "Dappled Shade") {
+    explanation += " Dappled shade suits leafy greens, herbs, and cool-season flowers; fruiting vegetables should get the sunniest spots available.";
+  } else if (sun === "Partial Shade" || sun === "Part Shade") {
+    explanation += " Part shade suits leafy greens and herbs well; fruiting crops (tomatoes, cucumbers) may yield less than in full sun.";
+  } else if (sun === "Part Sun") {
+    explanation += " Part sun (4–6 hrs) supports most vegetables and herbs; tomatoes and cucumbers will still produce but may ripen a little more slowly.";
   }
 
   return explanation;
 }
 
 // ---------------------------------------------------------------------------
-// Companion notes — contextual text about why selected flowers/plants help
+// Companion notes
 // ---------------------------------------------------------------------------
 
 function buildCompanionNotes(plants: PlantItem[]): string[] {
@@ -454,56 +585,34 @@ function buildCompanionNotes(plants: PlantItem[]): string[] {
     );
   }
   if (names.has("Nasturtiums")) {
-    notes.push(
-      "🟠 Nasturtiums act as a trap crop, drawing aphids away from vegetables. Both leaves and flowers are edible."
-    );
+    notes.push("🟠 Nasturtiums act as a trap crop, drawing aphids away from vegetables. Both leaves and flowers are edible.");
   }
   if (names.has("Calendula")) {
-    notes.push(
-      "🏵️ Calendula deters aphids and tomato hornworms. Edible petals and great early-season pollinator support."
-    );
+    notes.push("🏵️ Calendula deters aphids and tomato hornworms. Edible petals and great early-season pollinator support.");
   }
   if (names.has("Sunflowers")) {
-    notes.push(
-      "🌻 Sunflowers are strong pollinator magnets. Tall varieties can double as a windbreak or natural trellis."
-    );
+    notes.push("🌻 Sunflowers are strong pollinator magnets. Tall varieties can double as a windbreak or natural trellis.");
   }
   if (names.has("Cosmos")) {
-    notes.push(
-      "🌸 Cosmos attract lacewings and other beneficial predatory insects that keep pest populations in check."
-    );
+    notes.push("🌸 Cosmos attract lacewings and other beneficial predatory insects that keep pest populations in check.");
   }
   if (names.has("Zinnias")) {
-    notes.push(
-      "💮 Zinnias are long-blooming pollinator favourites — their bold colours attract butterflies all summer."
-    );
+    notes.push("💮 Zinnias are long-blooming pollinator favourites — their bold colours attract butterflies all summer.");
   }
   if (names.has("Pansies") || names.has("Violas")) {
-    notes.push(
-      "🪻 Pansies and violas are edible cool-season flowers that attract early-season pollinators before other plants bloom."
-    );
+    notes.push("🪻 Pansies and violas are edible cool-season flowers that attract early-season pollinators before other plants bloom.");
   }
   if (names.has("Sweet Peas")) {
-    notes.push(
-      "🌷 Sweet Peas are fragrant climbers that draw bees and butterflies; provide a trellis or fence for best results."
-    );
+    notes.push("🌷 Sweet Peas are fragrant climbers that draw bees and butterflies; provide a trellis or fence for best results.");
   }
   if (names.has("Lavender")) {
-    notes.push(
-      "💜 Lavender repels moths, flies, and fleas while being a superb bee attractor. A long-lived perennial once established."
-    );
+    notes.push("💜 Lavender repels moths, flies, and fleas while being a superb bee attractor. A long-lived perennial once established.");
   }
-
-  // Mint container note
   if (names.has("Mint")) {
     notes.push("🍃 Mint spreads aggressively — grow it in a container sunk into the soil to keep it in bounds.");
   }
-
-  // Companion benefit summary for mixed plans
   if (plants.some(p => p.type === "flower") && hasVeggies) {
-    notes.push(
-      "🐝 Pollinator-friendly flowers placed around the edge of the garden bed increase vegetable yields by improving fertilisation."
-    );
+    notes.push("🐝 Pollinator-friendly flowers placed around the edge of the bed increase vegetable yields by improving fertilisation.");
   }
 
   return notes;
@@ -525,22 +634,21 @@ function buildGrid(plants: PlantItem[], lengthFt: number, widthFt: number): MapC
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (plants.length === 0) break;
-      grid[r][c] = { plant: plants[idx % plants.length], hasConflict: false };
+      grid[r]![c] = { plant: plants[idx % plants.length]!, hasConflict: false };
       idx++;
     }
   }
 
-  // Adjacency-based companion conflict check (4-directional neighbours)
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const cell = grid[r][c];
+      const cell = grid[r]![c]!;
       if (!cell.plant) continue;
 
       const neighbours: MapCell[] = [
-        r > 0        ? grid[r - 1][c] : null,
-        r < rows - 1 ? grid[r + 1][c] : null,
-        c > 0        ? grid[r][c - 1] : null,
-        c < cols - 1 ? grid[r][c + 1] : null,
+        r > 0        ? grid[r - 1]![c]! : null,
+        r < rows - 1 ? grid[r + 1]![c]! : null,
+        c > 0        ? grid[r]![c - 1]! : null,
+        c < cols - 1 ? grid[r]![c + 1]! : null,
       ].filter((n): n is MapCell => n !== null);
 
       for (const nb of neighbours) {
@@ -556,13 +664,9 @@ function buildGrid(plants: PlantItem[], lengthFt: number, widthFt: number): MapC
 }
 
 // ---------------------------------------------------------------------------
-// Weekly schedule — from today through first fall frost
+// Weekly schedule
 // ---------------------------------------------------------------------------
 
-/**
- * Planting depth reference by plant ID.
- * Values are plain strings already formatted for display.
- */
 const SOWING_DEPTH: Record<string, string> = {
   carrots:      "Sow 6 mm (¼ in) deep · thin to 5 cm (2 in) apart",
   radishes:     "Sow 1 cm (½ in) deep · 2.5 cm (1 in) apart",
@@ -601,8 +705,8 @@ function weekSunday(date: Date): Date {
 }
 
 function buildSchedule(
-  plants: PlantItem[],
-  region: GrowingRegion,
+  plants:  PlantItem[],
+  region:  GrowingRegion,
   _profile: GardenProfile,
 ): WeeklyScheduleItem[] {
   const today = new Date();
@@ -610,11 +714,9 @@ function buildSchedule(
   const year = today.getFullYear();
 
   const lastFrost      = parseFrostDate(region.lastSpringFrost, year);
-  const firstFallFrost = parseFrostDate(region.firstFallFrost, year);
+  const firstFallFrost = parseFrostDate(region.firstFallFrost,  year);
 
-  // ── Build action map: week-sunday ISO string → PlantAction[] ──────────
   const actionMap = new Map<string, PlantAction[]>();
-
   const push = (date: Date, action: PlantAction) => {
     const key = weekSunday(date).toISOString();
     if (!actionMap.has(key)) actionMap.set(key, []);
@@ -622,11 +724,10 @@ function buildSchedule(
   };
 
   for (const plant of plants) {
-    // ── Indoor-start plants ─────────────────────────────────────────────
     if (plant.startIndoors && plant.indoorWeeksAhead) {
-      const indoorDate    = addDays(lastFrost, -plant.indoorWeeksAhead * 7);
+      const indoorDate     = addDays(lastFrost, -plant.indoorWeeksAhead * 7);
       const transplantDate = addDays(lastFrost, 7);
-      const isIndoorPast  = indoorDate < today;
+      const isIndoorPast   = indoorDate < today;
 
       if (!isIndoorPast) {
         push(indoorDate, {
@@ -637,7 +738,6 @@ function buildSchedule(
           depthNote: SOWING_DEPTH[plant.id],
         });
       } else {
-        // Missed the indoor window — recommend buying from a garden centre
         push(transplantDate, {
           plant,
           actionType: "buy_transplant",
@@ -654,7 +754,6 @@ function buildSchedule(
         depthNote: TRANSPLANT_DEPTH,
       });
 
-      // Bloom watch for indoor-started flowers
       if (plant.type === "flower") {
         const bloomDate = addDays(transplantDate, plant.daysToMaturity);
         if (bloomDate <= firstFallFrost) {
@@ -668,10 +767,8 @@ function buildSchedule(
       }
     }
 
-    // ── Direct-sow plants ───────────────────────────────────────────────
     if (plant.directSow) {
       const sowDate = addDays(lastFrost, -plant.weeksBeforeFrost * 7);
-
       push(sowDate, {
         plant,
         actionType: "direct_sow",
@@ -682,7 +779,6 @@ function buildSchedule(
         depthNote: SOWING_DEPTH[plant.id],
       });
 
-      // Bloom watch for direct-sown flowers
       if (plant.type === "flower") {
         const bloomDate = addDays(sowDate, plant.daysToMaturity);
         if (bloomDate <= firstFallFrost) {
@@ -697,9 +793,8 @@ function buildSchedule(
     }
   }
 
-  // ── Maintenance check-ins (not tied to specific plants) ───────────────
-  const maint1 = addDays(lastFrost, 21);  // ~3 weeks after last frost
-  const maint2 = addDays(lastFrost, 49);  // ~7 weeks after last frost
+  const maint1 = addDays(lastFrost, 21);
+  const maint2 = addDays(lastFrost, 49);
 
   if (maint1 >= today && maint1 <= firstFallFrost) {
     push(maint1, {
@@ -716,7 +811,6 @@ function buildSchedule(
     });
   }
 
-  // ── Build the week list ────────────────────────────────────────────────
   const cursor = weekSunday(today);
   const weeks: WeeklyScheduleItem[] = [];
 
