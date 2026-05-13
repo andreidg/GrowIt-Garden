@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Camera body -->
+  <rect x="20" y="90" width="160" height="90" rx="14" fill="#1A3C2E"/>
+
+  <!-- Camera top strip (cream) -->
+  <rect x="20" y="90" width="160" height="22" rx="8" fill="#F5F0E8"/>
+  <rect x="20" y="102" width="160" height="10" fill="#F5F0E8"/>
+
+  <!-- Shutter button bump on top -->
+  <rect x="38" y="83" width="26" height="14" rx="5" fill="#1A3C2E"/>
+
+  <!-- Lens ring (outer white) -->
+  <circle cx="100" cy="144" r="30" fill="#F5F0E8"/>
+  <!-- Lens ring (mid green) -->
+  <circle cx="100" cy="144" r="26" fill="#2A5C47"/>
+  <!-- Lens inner -->
+  <circle cx="100" cy="144" r="20" fill="#1A3C2E"/>
+  <!-- Lens highlight -->
+  <circle cx="100" cy="144" r="14" fill="#2A5C47"/>
+
+  <!-- Sprout inside lens -->
+  <path d="M100 152 L100 138" stroke="#F5F0E8" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M100 142 C100 142 95 137 91 138 C91 138 92 143 100 142Z" fill="#A8D5A2"/>
+  <path d="M100 142 C100 142 105 137 109 138 C109 138 108 143 100 142Z" fill="#A8D5A2"/>
+
+  <!-- Lens reflection dots -->
+  <circle cx="110" cy="134" r="3" fill="white" opacity="0.8"/>
+  <circle cx="116" cy="139" r="1.5" fill="white" opacity="0.5"/>
+
+  <!-- Gold indicator dot -->
+  <circle cx="160" cy="110" r="5" fill="#D4A853"/>
+
+  <!-- Plant stem growing from camera -->
+  <path d="M100 90 L100 55" stroke="#2A5C47" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Left large leaf -->
+  <path d="M100 72 C100 72 82 62 74 50 C74 50 90 46 100 62Z" fill="#4CAF50"/>
+  <path d="M100 72 C96 66 82 57 74 50" stroke="#2A5C47" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+  <!-- Right large leaf -->
+  <path d="M100 72 C100 72 118 62 126 50 C126 50 110 46 100 62Z" fill="#4CAF50"/>
+  <path d="M100 72 C104 66 118 57 126 50" stroke="#2A5C47" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+
+  <!-- Centre top leaf -->
+  <path d="M100 55 C100 55 95 42 100 30 C105 42 100 55 100 55Z" fill="#66BB6A"/>
+  <path d="M100 55 L100 38" stroke="#2A5C47" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Left small lower leaf -->
+  <path d="M100 82 C100 82 88 77 84 70 C84 70 93 68 100 78Z" fill="#66BB6A"/>
+
+  <!-- Right small lower leaf -->
+  <path d="M100 82 C100 82 112 77 116 70 C116 70 107 68 100 78Z" fill="#66BB6A"/>
+</svg>
