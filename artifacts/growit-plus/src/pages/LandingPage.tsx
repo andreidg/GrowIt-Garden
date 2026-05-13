@@ -6,8 +6,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   return (
     <div className="flex-1 flex flex-col min-h-full bg-cream-light overflow-y-auto hide-scrollbar animate-in fade-in duration-500">
 
-      {/* ── 1. Hero — dark forest ── */}
-      <section className="bg-forest text-cream px-6 pt-12 pb-20 rounded-b-3xl relative overflow-hidden shrink-0">
+      {/* ── 1. Hero — slightly brightened forest ── */}
+      <section className="bg-forest-hero text-cream px-6 pt-12 pb-20 rounded-b-3xl relative overflow-hidden shrink-0">
         {/* Subtle decorative rings */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute w-64 h-64 border border-cream/10 rounded-full top-8 -right-20" />
@@ -16,7 +16,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
         {/* Logo + wordmark */}
         <header className="flex items-center gap-3 mb-10 relative z-10">
-          <img src="/logo.svg" alt="GrowIt+ logo" className="w-10 h-10" />
+          <img src="/logo.png" alt="GrowIt+ logo" className="w-12 h-12 object-contain" />
           <span className="font-serif text-xl font-semibold text-cream tracking-wide">GrowIt+</span>
         </header>
 
