@@ -1,10 +1,10 @@
-import { VEGETABLES, HERBS, Plant } from "./plants";
+import { VEGETABLES, HERBS, FLOWERS, Plant } from "./plants";
 import { FrostData } from "./locations";
 import { detectConflicts } from "./companion-rules";
 
 export type SunlightLevel = "Full Sun" | "Partial Shade" | "Full Shade";
 export type SoilType = "Raised Bed" | "In-Ground Clay" | "In-Ground Loam" | "Container/Pots";
-export type PlantPreference = "Vegetables Only" | "Vegetables + Herbs";
+export type PlantPreference = "Vegetables Only" | "Vegetables + Herbs" | "Vegetables + Herbs + Flowers" | "Vegetables + Flowers";
 
 export interface GardenSetup {
   region: string;
@@ -13,6 +13,7 @@ export interface GardenSetup {
   sunlight: SunlightLevel;
   soilType: SoilType;
   plantPreference: PlantPreference;
+  unitPreference?: "ft" | "m";
 }
 
 export interface GridCell {
@@ -74,8 +75,11 @@ export function generatePlan(setup: GardenSetup, frostData: FrostData): GardenPl
 
 function selectCandidatePlants(setup: GardenSetup): Plant[] {
   let pool: Plant[] = [...VEGETABLES];
-  if (setup.plantPreference === "Vegetables + Herbs") {
+  if (setup.plantPreference === "Vegetables + Herbs" || setup.plantPreference === "Vegetables + Herbs + Flowers") {
     pool = [...pool, ...HERBS];
+  }
+  if (setup.plantPreference === "Vegetables + Herbs + Flowers" || setup.plantPreference === "Vegetables + Flowers") {
+    pool = [...pool, ...FLOWERS];
   }
   
   // Filter by sunlight: Full Shade can only grow shade-tolerant plants

@@ -1,5 +1,5 @@
 import { WeekEntry } from "@/data/plan-generator";
-import { Home, Sprout, Shovel } from "lucide-react";
+import { Home, Sprout, Leaf } from "lucide-react";
 
 interface WeeklyScheduleProps {
   weeks: WeekEntry[];
@@ -17,48 +17,65 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
         const isPast = week.weekStart < today && !week.isCurrent;
         if (isPast && week.actions.length === 0) return null;
 
+        const isFutureNoAction = !week.isCurrent && !isPast && week.actions.length === 0;
+
+        if (isFutureNoAction) {
+          return (
+            <div key={i} className="flex justify-between items-center py-2 px-1 border-b border-cream-dark/50" data-testid={`week-entry-${i}`}>
+              <span className="text-sm font-bold text-forest/60">{week.weekLabel}</span>
+              <span className="text-sm font-medium text-forest/40">Water and watch 💧</span>
+            </div>
+          );
+        }
+
+        const isCurrent = week.isCurrent;
+        
         return (
           <div 
             key={i} 
-            className={`p-5 rounded-xl border flex flex-col md:flex-row gap-4 transition-all
-              ${week.isCurrent ? 'bg-primary/5 border-primary/30 ring-1 ring-primary/20 shadow-sm' : 'bg-background'}
-              ${isPast ? 'opacity-60 grayscale-[50%]' : ''}
+            className={`p-5 rounded-3xl border flex flex-col gap-4 transition-all
+              ${isCurrent ? 'bg-forest text-cream border-forest shadow-md' : 'bg-cream-light border-cream-dark'}
+              ${isPast ? 'opacity-70' : ''}
             `}
             data-testid={`week-entry-${i}`}
           >
-            <div className="md:w-1/4 shrink-0">
-              <h4 className={`font-bold ${week.isCurrent ? 'text-primary' : 'text-foreground'}`}>
+            <div className="flex justify-between items-center">
+              <h4 className={`font-bold ${isCurrent ? 'text-cream' : 'text-forest'}`}>
                 {week.weekLabel}
               </h4>
-              {week.isCurrent && (
-                <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full mt-1 inline-block">
-                  Current Week
+              {isCurrent && (
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-gold text-forest px-2.5 py-1 rounded-full">
+                  This Week
                 </span>
               )}
             </div>
             
-            <div className="md:w-3/4">
+            <div className="w-full">
               {week.actions.length > 0 ? (
                 <ul className="space-y-3">
                   {week.actions.map((action, j) => {
-                    let Icon = Shovel;
-                    let iconColor = "text-accent";
+                    let Icon = Leaf;
+                    let iconColorClass = isCurrent ? "text-cream bg-white/20" : "text-gold bg-gold/20";
+                    
                     if (action.actionType === "start_indoors") {
                       Icon = Home;
-                      iconColor = "text-secondary";
+                      iconColorClass = isCurrent ? "text-cream bg-white/20" : "text-terracotta bg-terracotta/20";
                     } else if (action.actionType === "direct_sow") {
                       Icon = Sprout;
-                      iconColor = "text-primary";
+                      iconColorClass = isCurrent ? "text-cream bg-white/20" : "text-forest bg-forest/20";
+                    } else if (action.actionType === "transplant") {
+                      Icon = Leaf;
+                      iconColorClass = isCurrent ? "text-cream bg-white/20" : "text-gold bg-gold/20";
                     }
                     
                     return (
                       <li key={j} className="flex items-start gap-3">
-                        <div className={`mt-0.5 bg-muted p-1.5 rounded-md ${iconColor}`}>
+                        <div className={`p-2 rounded-xl shrink-0 ${iconColorClass}`}>
                           <Icon className="w-4 h-4" />
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {action.plant.emoji} {action.description}
+                        <div className="mt-1">
+                          <p className={`text-sm font-medium leading-snug ${isCurrent ? 'text-cream/90' : 'text-forest'}`}>
+                            <span className="mr-1">{action.plant.emoji}</span> {action.description}
                           </p>
                         </div>
                       </li>
@@ -66,7 +83,7 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
                   })}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground italic mt-1">
+                <p className={`text-sm italic mt-1 ${isCurrent ? 'text-cream/70' : 'text-forest/60'}`}>
                   {week.explanation}
                 </p>
               )}

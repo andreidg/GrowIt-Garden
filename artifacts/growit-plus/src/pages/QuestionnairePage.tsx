@@ -3,13 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FROST_DATA } from "@/data/locations";
 import { GardenSetup } from "@/data/plan-generator";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, MapPin, Sun, CloudSun, Cloud } from "lucide-react";
 
 const formSchema = z.object({
   region: z.string().min(1, "Please select a region"),
@@ -17,7 +13,7 @@ const formSchema = z.object({
   widthFt: z.coerce.number().min(1).max(20),
   sunlight: z.enum(["Full Sun", "Partial Shade", "Full Shade"]),
   soilType: z.enum(["Raised Bed", "In-Ground Clay", "In-Ground Loam", "Container/Pots"]),
-  plantPreference: z.enum(["Vegetables Only", "Vegetables + Herbs"]),
+  plantPreference: z.enum(["Vegetables Only", "Vegetables + Herbs", "Vegetables + Herbs + Flowers"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -29,6 +25,7 @@ interface QuestionnairePageProps {
 
 export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageProps) {
   const [dimensionCapped, setDimensionCapped] = useState(false);
+  const [unit, setUnit] = useState<"ft" | "m">("ft");
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -38,213 +35,205 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
       widthFt: 8,
       sunlight: "Full Sun",
       soilType: "Raised Bed",
-      plantPreference: "Vegetables + Herbs",
+      plantPreference: "Vegetables + Herbs + Flowers",
     },
   });
 
   const onSubmit = (values: FormValues) => {
-    onNext(values);
+    const lengthFt = unit === "m" ? Math.min(20, Math.round(values.lengthFt * 3.281)) : values.lengthFt;
+    const widthFt  = unit === "m" ? Math.min(20, Math.round(values.widthFt  * 3.281)) : values.widthFt;
+    onNext({ ...values, lengthFt, widthFt, unitPreference: unit });
   };
 
-  const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
-    let val = parseInt(e.target.value, 10);
-    if (isNaN(val)) return field.onChange("");
-    if (val > 20) {
-      val = 20;
+  const handleDimensionChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: "lengthFt" | "widthFt") => {
+    let val = parseFloat(e.target.value);
+    if (isNaN(val) || val <= 0) {
+      form.setValue(fieldName, "" as any);
+      return;
+    }
+    const maxInput = unit === "m" ? 6.1 : 20; // 6.1m ≈ 20ft
+    if (val > maxInput) {
+      val = maxInput;
       setDimensionCapped(true);
     }
-    field.onChange(val);
+    form.setValue(fieldName, val);
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto animate-in slide-in-from-right-8 duration-300">
-      <Button variant="ghost" className="mb-6 -ml-4 text-muted-foreground" onClick={onBack} data-testid="btn-back">
-        <ChevronLeft className="w-4 h-4 mr-2" /> Back
-      </Button>
-      
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-primary mb-2">Tell us about your space</h2>
-        <p className="text-muted-foreground">We need a few details to generate your perfect garden plan.</p>
+    <div className="w-full flex-1 flex flex-col bg-cream overflow-y-auto pb-safe">
+      <div className="px-6 py-4 flex items-center border-b border-cream-dark sticky top-0 bg-cream z-10">
+        <button className="p-2 -ml-2 text-forest/70 active:bg-cream-dark rounded-full" onClick={onBack} data-testid="btn-back">
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <div className="flex-1 flex justify-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-forest"></div>
+          <div className="w-2 h-2 rounded-full bg-forest/20"></div>
+          <div className="w-2 h-2 rounded-full bg-forest/20"></div>
+        </div>
+        <div className="w-10"></div>
       </div>
+      
+      <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 flex flex-col gap-6 animate-in slide-in-from-right-4 duration-300">
+        <div>
+          <h2 className="text-2xl font-bold text-forest mb-1 font-serif">Tell us about your space</h2>
+          <p className="text-forest/70 text-sm">We need a few details to generate your perfect garden plan.</p>
+        </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 bg-card p-6 md:p-8 rounded-xl border shadow-sm">
-          
-          <FormField
-            control={form.control}
-            name="region"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-lg font-semibold">Where are you planting?</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger data-testid="select-region">
-                      <SelectValue placeholder="Select region" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.keys(FROST_DATA).map(region => (
-                      <SelectItem key={region} value={region} data-testid={`region-${region}`}>{region}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Region */}
+        <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 flex flex-col gap-3">
+          <label className="text-base font-semibold text-forest">Where are you planting?</label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-forest/50" />
+            <select
+              {...form.register("region")}
+              className="w-full h-12 bg-white border border-cream-dark rounded-xl pl-10 pr-4 text-forest font-medium appearance-none focus:outline-none focus:ring-2 focus:ring-forest/20"
+              data-testid="select-region"
+            >
+              {Object.keys(FROST_DATA).map(region => (
+                <option key={region} value={region}>{region}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="lengthFt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-lg font-semibold">Length (feet)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="1" 
-                      {...field} 
-                      onChange={(e) => handleDimensionChange(e, field)}
-                      data-testid="input-length"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="widthFt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-lg font-semibold">Width (feet)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="1" 
-                      {...field} 
-                      onChange={(e) => handleDimensionChange(e, field)}
-                      data-testid="input-width"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* Garden Size */}
+        <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <label className="text-base font-semibold text-forest">Garden Size</label>
+            <div className="flex bg-cream-dark rounded-full p-0.5">
+              <button
+                type="button"
+                onClick={() => setUnit("ft")}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${unit === "ft" ? "bg-forest text-cream shadow-sm" : "text-forest/60"}`}
+                data-testid="unit-ft"
+              >ft</button>
+              <button
+                type="button"
+                onClick={() => setUnit("m")}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${unit === "m" ? "bg-forest text-cream shadow-sm" : "text-forest/60"}`}
+                data-testid="unit-m"
+              >m</button>
+            </div>
           </div>
           
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-forest/70 font-medium ml-1">Length ({unit === "m" ? "metres" : "feet"})</span>
+              <input
+                type="number"
+                step="any"
+                min="1"
+                className="h-12 bg-white border border-cream-dark rounded-xl px-4 text-forest font-medium focus:outline-none focus:ring-2 focus:ring-forest/20"
+                placeholder={unit === "m" ? "6" : "20"}
+                {...form.register("lengthFt")}
+                onChange={(e) => handleDimensionChange(e, "lengthFt")}
+                data-testid="input-length"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-forest/70 font-medium ml-1">Width ({unit === "m" ? "metres" : "feet"})</span>
+              <input
+                type="number"
+                step="any"
+                min="1"
+                className="h-12 bg-white border border-cream-dark rounded-xl px-4 text-forest font-medium focus:outline-none focus:ring-2 focus:ring-forest/20"
+                placeholder={unit === "m" ? "6" : "20"}
+                {...form.register("widthFt")}
+                onChange={(e) => handleDimensionChange(e, "widthFt")}
+                data-testid="input-width"
+              />
+            </div>
+          </div>
           {dimensionCapped && (
-            <p className="text-sm text-secondary font-medium mt-1 bg-secondary/10 p-3 rounded" data-testid="text-dimension-cap-notice">
-              GrowIt+ supports gardens up to 20ft x 20ft. Your dimensions have been adjusted.
+            <p data-testid="text-dimension-cap-notice" className="text-sm text-terracotta font-medium mt-1 bg-terracotta/10 p-3 rounded-xl border border-terracotta/20">
+              GrowIt+ supports gardens up to {unit === "m" ? "6m × 6m" : "20ft × 20ft"}. Your dimensions have been adjusted.
             </p>
           )}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="sunlight"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-lg font-semibold">Sunlight Exposure</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col space-y-1"
-                    data-testid="radio-sunlight"
-                  >
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="Full Sun" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Full Sun (6+ hours)</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="Partial Shade" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Partial Shade (3-6 hours)</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="Full Shade" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Full Shade (&lt;3 hours)</FormLabel>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="soilType"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-lg font-semibold">Soil Setup</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                    data-testid="radio-soil"
-                  >
-                    {["Raised Bed", "In-Ground Clay", "In-Ground Loam", "Container/Pots"].map((soil) => (
-                      <FormItem key={soil} className="flex items-center space-x-3 space-y-0 border p-3 rounded-md hover:bg-muted/50 cursor-pointer transition-colors">
-                        <FormControl>
-                          <RadioGroupItem value={soil} />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer w-full">{soil}</FormLabel>
-                      </FormItem>
-                    ))}
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="plantPreference"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-lg font-semibold">What do you want to grow?</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col space-y-1"
-                    data-testid="radio-preference"
-                  >
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="Vegetables + Herbs" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Vegetables + Herbs (Recommended)</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="Vegetables Only" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Vegetables Only</FormLabel>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="pt-4">
-            <Button type="submit" size="lg" className="w-full text-lg h-14" data-testid="btn-next-questionnaire">
-              Review Frost Dates
-            </Button>
+        {/* Sunlight */}
+        <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 flex flex-col gap-3">
+          <label className="text-base font-semibold text-forest">Sunlight Exposure</label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { id: "Full Sun", icon: Sun, label: "Full Sun" },
+              { id: "Partial Shade", icon: CloudSun, label: "Partial Shade" },
+              { id: "Full Shade", icon: Cloud, label: "Full Shade" },
+            ].map(({ id, icon: Icon, label }) => {
+              const isSelected = form.watch("sunlight") === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => form.setValue("sunlight", id as any)}
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-colors h-24 ${
+                    isSelected ? "bg-forest border-forest text-cream" : "bg-white border-cream-dark text-forest/70"
+                  }`}
+                >
+                  <Icon className={`w-8 h-8 mb-2 ${isSelected ? "text-gold" : "text-forest/50"}`} />
+                  <span className="text-xs text-center font-medium leading-tight">{label}</span>
+                </button>
+              );
+            })}
           </div>
-        </form>
-      </Form>
+        </div>
+
+        {/* Soil Setup */}
+        <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 flex flex-col gap-3">
+          <label className="text-base font-semibold text-forest">Soil Setup</label>
+          <div className="grid grid-cols-2 gap-2">
+            {["Raised Bed", "In-Ground Clay", "In-Ground Loam", "Container/Pots"].map((soil) => {
+              const isSelected = form.watch("soilType") === soil;
+              return (
+                <button
+                  key={soil}
+                  type="button"
+                  onClick={() => form.setValue("soilType", soil as any)}
+                  className={`py-3 px-2 rounded-xl text-sm font-medium border transition-colors ${
+                    isSelected ? "bg-forest border-forest text-cream" : "bg-white border-cream-dark text-forest"
+                  }`}
+                >
+                  {soil}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Plant Preference */}
+        <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 flex flex-col gap-3">
+          <label className="text-base font-semibold text-forest">What do you want to grow?</label>
+          <div className="flex flex-col gap-2">
+            {[
+              { id: "Vegetables + Herbs + Flowers", label: "Veggie + Herbs + Flowers 🌸" },
+              { id: "Vegetables + Herbs", label: "Vegetables + Herbs 🌿" },
+              { id: "Vegetables Only", label: "Vegetables Only 🥕" },
+            ].map(({ id, label }) => {
+              const isSelected = form.watch("plantPreference") === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => form.setValue("plantPreference", id as any)}
+                  className={`py-3 px-4 rounded-xl text-sm font-medium border transition-colors text-left ${
+                    isSelected ? "bg-forest border-forest text-cream" : "bg-white border-cream-dark text-forest"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          className="w-full bg-forest text-cream text-lg font-semibold h-14 rounded-full shadow-md transition-transform active:scale-95 mt-4"
+          data-testid="btn-next-questionnaire"
+        >
+          Review Frost Dates
+        </button>
+      </form>
     </div>
   );
 }

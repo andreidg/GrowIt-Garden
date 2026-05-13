@@ -1,8 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { GardenSetup, generatePlan, GardenPlan } from "@/data/plan-generator";
 import { FROST_DATA } from "@/data/locations";
 import { savePlan } from "@/data/storage";
-import { ChevronLeft, Info, Calendar as CalendarIcon, MapPin } from "lucide-react";
+import { ChevronLeft, MapPin } from "lucide-react";
 
 interface FrostConfirmPageProps {
   setup: GardenSetup;
@@ -20,52 +19,55 @@ export default function FrostConfirmPage({ setup, onConfirm, onBack }: FrostConf
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto animate-in slide-in-from-right-8 duration-300">
-      <Button variant="ghost" className="mb-6 -ml-4 text-muted-foreground" onClick={onBack} data-testid="btn-back-frost">
-        <ChevronLeft className="w-4 h-4 mr-2" /> Back
-      </Button>
+    <div className="w-full flex-1 flex flex-col bg-cream overflow-y-auto pb-safe">
+      <div className="px-6 py-4 flex items-center border-b border-cream-dark sticky top-0 bg-cream z-10">
+        <button className="p-2 -ml-2 text-forest/70 active:bg-cream-dark rounded-full" onClick={onBack} data-testid="btn-back-frost">
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <div className="flex-1 flex justify-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-forest/20"></div>
+          <div className="w-2 h-2 rounded-full bg-forest"></div>
+          <div className="w-2 h-2 rounded-full bg-forest/20"></div>
+        </div>
+        <div className="w-10"></div>
+      </div>
       
-      <div className="bg-card p-8 rounded-2xl border shadow-sm text-center">
-        <div className="inline-flex p-3 bg-secondary/10 rounded-full mb-4">
-          <MapPin className="w-10 h-10 text-secondary" />
+      <div className="p-6 flex flex-col items-center text-center animate-in slide-in-from-right-4 duration-300">
+        <div className="w-20 h-20 bg-frost/20 rounded-full flex items-center justify-center mb-6 mt-4">
+          <MapPin className="w-10 h-10 text-frost-dark" />
         </div>
         
-        <h2 className="text-3xl font-bold text-primary mb-2">
-          Planting in {setup.region}
+        <h2 className="text-3xl font-bold text-forest mb-2 font-serif">
+          {setup.region}
         </h2>
         
-        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-          We use historical frost dates to schedule when to start your seeds and transplant them outside.
-        </p>
+        <div className="bg-forest/5 text-forest px-3 py-1 rounded-full text-sm font-semibold mb-8 border border-forest/10">
+          Zone {frostData.zone}
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-left">
-          <div className="p-5 bg-background border rounded-xl flex items-start gap-4">
-            <CalendarIcon className="w-6 h-6 text-primary mt-1" />
-            <div>
-              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Last Spring Frost</p>
-              <p className="text-2xl font-bold text-foreground">{frostData.lastSpringFrost}</p>
-            </div>
+        <div className="w-full flex flex-col gap-4 mb-8">
+          <div className="bg-forest/10 border border-forest/20 p-5 rounded-2xl flex flex-col items-center">
+            <span className="text-xs text-forest/70 font-bold uppercase tracking-wider mb-1">Last Spring Frost</span>
+            <span className="text-2xl font-bold text-forest">{frostData.lastSpringFrost}</span>
           </div>
           
-          <div className="p-5 bg-background border rounded-xl flex items-start gap-4">
-            <CalendarIcon className="w-6 h-6 text-secondary mt-1" />
-            <div>
-              <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">First Fall Frost</p>
-              <p className="text-2xl font-bold text-foreground">{frostData.firstFallFrost}</p>
-            </div>
+          <div className="bg-terracotta/10 border border-terracotta/20 p-5 rounded-2xl flex flex-col items-center">
+            <span className="text-xs text-terracotta-dark/80 font-bold uppercase tracking-wider mb-1">First Fall Frost</span>
+            <span className="text-2xl font-bold text-terracotta-dark">{frostData.firstFallFrost}</span>
           </div>
         </div>
         
-        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3 text-left mb-8">
-          <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-blue-900">
-            <strong>Zone {frostData.zone}:</strong> Your personalized plan will calculate exactly when to plant each crop based on these dates, ensuring everything matures before the fall frost.
-          </p>
-        </div>
+        <p className="text-forest/70 text-sm mb-10 leading-relaxed max-w-sm">
+          We use these historical frost dates to schedule when to start your seeds indoors and when it's safe to transplant them outside.
+        </p>
         
-        <Button size="lg" onClick={handleGenerate} className="w-full text-lg h-14" data-testid="btn-generate-plan">
-          Generate My Plan
-        </Button>
+        <button 
+          onClick={handleGenerate} 
+          className="w-full bg-forest text-cream text-lg font-semibold h-14 rounded-full shadow-md transition-transform active:scale-95"
+          data-testid="btn-generate-plan"
+        >
+          Generate My Garden Plan
+        </button>
       </div>
     </div>
   );

@@ -1,18 +1,18 @@
-export type PlantType = "vegetable" | "herb";
-export type ActionType = "start_indoors" | "direct_sow" | "transplant";
+export type PlantType = "vegetable" | "herb" | "flower";
+export type ActionType = "start_indoors" | "direct_sow" | "transplant" | "harvest_soon";
 
 export interface Plant {
   name: string;
   type: PlantType;
   emoji: string;
-  abbr: string;           // short label for grid cell, e.g. "CAR"
-  spacingFt: number;      // square feet per plant
-  weeksBeforeFrost: number; // weeks before last spring frost to start indoors (0 = direct sow after frost)
-  directSow: boolean;     // can direct sow outdoors
-  startIndoors: boolean;  // should start indoors
+  abbr: string;
+  spacingFt: number;
+  weeksBeforeFrost: number;
+  directSow: boolean;
+  startIndoors: boolean;
   daysToMaturity: number;
-  indoorWeeksAhead?: number; // weeks before last frost to start indoors
-  shade?: "full" | "partial" | "any"; // sun tolerance
+  indoorWeeksAhead?: number;
+  shade?: "full" | "partial" | "any";
   actionType: ActionType;
   minSunlight: "Full Sun" | "Partial Shade" | "Full Shade";
 }
@@ -46,4 +46,17 @@ export const HERBS: Plant[] = [
   { name: "Mint",      type: "herb", emoji: "🌿", abbr: "MNT", spacingFt: 1,   directSow: false, startIndoors: true,  daysToMaturity: 60, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Partial Shade" },
   { name: "Sage",      type: "herb", emoji: "🌿", abbr: "SAG", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 75, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
   { name: "Lavender",  type: "herb", emoji: "💜", abbr: "LAV", spacingFt: 2,   directSow: false, startIndoors: true,  daysToMaturity: 90, indoorWeeksAhead: 10, weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
+];
+
+export const FLOWERS: Plant[] = [
+  { name: "Marigolds",    type: "flower", emoji: "🌼", abbr: "MAR", spacingFt: 0.5,  directSow: true,  startIndoors: false, daysToMaturity: 50,  weeksBeforeFrost: 0,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Zinnias",      type: "flower", emoji: "🌸", abbr: "ZIN", spacingFt: 0.5,  directSow: true,  startIndoors: false, daysToMaturity: 60,  weeksBeforeFrost: 0,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Sunflowers",   type: "flower", emoji: "🌻", abbr: "SUN", spacingFt: 2,    directSow: true,  startIndoors: false, daysToMaturity: 70,  weeksBeforeFrost: 0,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Dahlias",      type: "flower", emoji: "💐", abbr: "DAH", spacingFt: 2,    directSow: false, startIndoors: true,  daysToMaturity: 90,  indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
+  { name: "Pansies",      type: "flower", emoji: "🌺", abbr: "PAN", spacingFt: 0.5,  directSow: false, startIndoors: true,  daysToMaturity: 55,  indoorWeeksAhead: 10, weeksBeforeFrost: 4, actionType: "start_indoors", minSunlight: "Partial Shade" },
+  { name: "Nasturtiums",  type: "flower", emoji: "🟠", abbr: "NAS", spacingFt: 1,    directSow: true,  startIndoors: false, daysToMaturity: 50,  weeksBeforeFrost: 0,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Calendula",    type: "flower", emoji: "🌼", abbr: "CAL", spacingFt: 0.5,  directSow: true,  startIndoors: false, daysToMaturity: 50,  weeksBeforeFrost: 2,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Cosmos",       type: "flower", emoji: "🌸", abbr: "COS", spacingFt: 1,    directSow: true,  startIndoors: false, daysToMaturity: 60,  weeksBeforeFrost: 0,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Sweet Peas",   type: "flower", emoji: "🌷", abbr: "SWP", spacingFt: 0.5,  directSow: true,  startIndoors: false, daysToMaturity: 70,  weeksBeforeFrost: 4,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Echinacea",    type: "flower", emoji: "🌸", abbr: "ECH", spacingFt: 1.5,  directSow: false, startIndoors: true,  daysToMaturity: 90,  indoorWeeksAhead: 8,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
 ];
