@@ -7,7 +7,7 @@
 
 import type { GeneratedPlan } from "@/types/garden";
 
-const STORAGE_KEY = "growit_plan_v2";
+const STORAGE_KEY = "growit_plan_v3";
 
 export function savePlan(plan: GeneratedPlan): void {
   try {

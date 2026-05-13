@@ -170,6 +170,9 @@ export interface GeneratedPlan {
   schedule: WeeklyScheduleItem[];
   conflicts: string[];              // plant names with adjacent grid conflicts
   validation: ValidationResult;
+  timingExplanation: string;        // human-readable growing season summary
+  companionNotes: string[];         // why specific flowers/plants were included
+  cautionNotes: string[];           // plants excluded or included with caveats
 }
 
 // ---------------------------------------------------------------------------
