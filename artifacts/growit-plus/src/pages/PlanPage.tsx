@@ -7,7 +7,9 @@ import PlantLegend from "@/components/PlantLegend";
 import BottomNav, { type PlanTab } from "@/components/BottomNav";
 import { Download, Share2, RotateCcw, AlertTriangle, MapPin, Calendar, Info, Sparkles, Cpu, Wand2 } from "lucide-react";
 import WeatherRiskCard from "@/components/WeatherRiskCard";
+import WeatherStrip from "@/components/WeatherStrip";
 import { useWeatherRisk } from "@/hooks/useWeatherRisk";
+import { useForecast } from "@/hooks/useForecast";
 import { optimizeGridLayout } from "@/data/plan-generator";
 
 interface PlanPageProps {
@@ -26,6 +28,9 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
 
   const { data: weatherData, loading: weatherLoading, error: weatherError } =
     useWeatherRisk(region.label);
+
+  const { days: forecastDays, loading: forecastLoading, error: forecastError } =
+    useForecast(region.label);
 
   const fmt = (ft: number) => displayDimension(ft, profile.unitPreference);
 
@@ -370,6 +375,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
           <p className="text-sm text-forest/50 mb-5">
             {region.lastSpringFrost} last spring frost · {region.firstFallFrost} first fall frost
           </p>
+          <WeatherStrip days={forecastDays} loading={forecastLoading} error={forecastError} />
           <WeeklySchedule weeks={schedule} />
         </div>
 
