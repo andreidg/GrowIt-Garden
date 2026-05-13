@@ -6,8 +6,8 @@ export default function LandingPage({ onStart }: LandingPageProps) {
   return (
     <div className="flex-1 flex flex-col min-h-full bg-cream-light overflow-y-auto hide-scrollbar animate-in fade-in duration-500">
 
-      {/* ── 1. Hero — slightly brightened forest ── */}
-      <section className="bg-forest-hero text-cream px-6 pt-12 pb-20 rounded-b-3xl relative overflow-hidden shrink-0">
+      {/* ── 1. Hero — dark forest ── */}
+      <section className="bg-forest text-cream px-6 pt-12 pb-20 rounded-b-3xl relative overflow-hidden shrink-0">
         {/* Subtle decorative rings */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute w-64 h-64 border border-cream/10 rounded-full top-8 -right-20" />
