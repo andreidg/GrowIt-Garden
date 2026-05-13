@@ -16,7 +16,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
         {/* Logo + wordmark */}
         <header className="flex items-center gap-3 mb-10 relative z-10">
-          <img src="/logo.png" alt="GrowIt+ logo" className="w-12 h-12 object-contain" />
+          <img src="/logo.svg" alt="GrowIt+ logo" className="w-10 h-10" />
           <span className="font-serif text-xl font-semibold text-cream tracking-wide">GrowIt+</span>
         </header>
 
