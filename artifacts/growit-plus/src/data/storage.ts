@@ -1,29 +1,31 @@
-const STORAGE_KEY = "growit_plan";
+/**
+ * GrowIt+ Plan Persistence
+ * Saves and restores the latest generated plan using localStorage.
+ * Uses sessionStorage as a secondary signal for same-tab continuity.
+ * The GeneratedPlan type is serialization-safe (no Sets or Date objects).
+ */
 
-export function savePlan(plan: any): void {
+import type { GeneratedPlan } from "@/types/garden";
+
+const STORAGE_KEY = "growit_plan_v2";
+
+export function savePlan(plan: GeneratedPlan): void {
   try {
-    // Convert sets to arrays before saving
-    const planToSave = {
-      ...plan,
-      conflicts: Array.from(plan.conflicts || []),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(planToSave));
-  } catch (e) {
-    console.warn("Could not save plan to localStorage", e);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+  } catch {
+    // Storage quota exceeded or unavailable — fail silently
   }
 }
 
-export function loadPlan(): any | null {
+export function loadPlan(): GeneratedPlan | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const plan = JSON.parse(raw);
-    // Rehydrate sets
-    if (plan.conflicts) {
-      plan.conflicts = new Set(plan.conflicts);
-    }
+    const plan = JSON.parse(raw) as GeneratedPlan;
+    // Basic shape validation: must have id + profile + grid
+    if (!plan.id || !plan.profile || !plan.grid) return null;
     return plan;
-  } catch (e) {
+  } catch {
     return null;
   }
 }

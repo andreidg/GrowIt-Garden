@@ -1,111 +1,119 @@
-import { VEGETABLES, HERBS, FLOWERS, Plant } from "./plants";
-import { FrostData } from "./locations";
-import { detectConflicts, areConflicting } from "./companion-rules";
+/**
+ * GrowIt+ Deterministic Plan Generator
+ * Selects plants, builds the garden grid (with adjacency-based companion validation),
+ * and generates a week-by-week schedule anchored to regional frost dates.
+ * PRD V10 Section 12.2 — deterministic fallback generator.
+ */
 
-export type SunlightLevel = "Full Sun" | "Partial Shade" | "Full Shade";
-export type SoilType = "Raised Bed" | "In-Ground Clay" | "In-Ground Loam" | "Container/Pots";
-export type PlantPreference = "Vegetables Only" | "Vegetables + Herbs" | "Vegetables + Herbs + Flowers" | "Vegetables + Flowers";
+import type {
+  GardenProfile,
+  GrowingRegion,
+  GeneratedPlan,
+  MapCell,
+  WeeklyScheduleItem,
+  PlantAction,
+  ValidationResult,
+} from "@/types/garden";
+import { VEGETABLES, HERBS, FLOWERS, type PlantItem } from "@/data/plants";
+import { detectConflicts, areConflicting } from "@/data/companion-rules";
 
-export interface GardenSetup {
-  region: string;
-  lengthFt: number;
-  widthFt: number;
-  sunlight: SunlightLevel;
-  soilType: SoilType;
-  plantPreference: PlantPreference;
-  unitPreference?: "ft" | "m";
-}
+export type { GardenProfile, GrowingRegion, GeneratedPlan, MapCell, WeeklyScheduleItem, PlantAction, PlantItem };
 
-export interface GridCell {
-  plant: Plant | null;
-  hasConflict: boolean;
-}
-
-export interface WeekEntry {
-  weekLabel: string;        // "Week of May 12"
-  weekStart: Date;
-  isCurrent: boolean;
-  actions: PlantAction[];
-  explanation: string;
-}
-
-export interface PlantAction {
-  plant: Plant;
-  actionType: "start_indoors" | "direct_sow" | "transplant" | "harvest_soon";
-  description: string;
-}
-
-export interface GardenPlan {
-  setup: GardenSetup;
-  frostData: FrostData;
-  selectedPlants: Plant[];
-  grid: GridCell[][];       // [row][col], dimensions = widthFt x lengthFt
-  schedule: WeekEntry[];
-  conflicts: Set<string>;
-  generatedAt: string;      // ISO date string
-}
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
 /**
- * Main entry point. Generates a complete garden plan deterministically.
- * No API calls — pure local logic.
+ * Generate a complete deterministic garden plan from a profile + region.
+ * No API calls — pure synchronous logic suitable for demo resilience.
  */
-export function generatePlan(setup: GardenSetup, frostData: FrostData): GardenPlan {
-  // 1. Select plants based on sunlight + preference + soil constraints
-  const candidatePlants = selectCandidatePlants(setup);
-  
-  // 2. Detect companion planting conflicts (warn, don't block)
-  const conflicts = detectConflicts(candidatePlants.map(p => p.name));
-  
-  // 3. Fill the garden grid
-  const grid = buildGrid(candidatePlants, setup.lengthFt, setup.widthFt);
-  
-  // 4. Build week-by-week schedule from today through first fall frost
-  const schedule = buildSchedule(candidatePlants, frostData);
-  
+export function generatePlan(profile: GardenProfile, region: GrowingRegion): GeneratedPlan {
+  const selectedPlants = selectPlants(profile);
+  const grid = buildGrid(selectedPlants, profile.lengthFt, profile.widthFt);
+  const schedule = buildSchedule(selectedPlants, region);
+
+  // Collect names of plants that have an adjacent conflict in the grid
+  const conflictSet = new Set<string>();
+  for (const row of grid) {
+    for (const cell of row) {
+      if (cell.hasConflict && cell.plant) conflictSet.add(cell.plant.name);
+    }
+  }
+  const conflicts = Array.from(conflictSet);
+
+  // List-level conflicts (for the banner notice) covers plants anywhere in the selection
+  const listConflicts = detectConflicts(selectedPlants.map(p => p.name));
+
+  const validation: ValidationResult = {
+    plantWhitelistPassed: selectedPlants.every(p => p.isWhitelisted),
+    companionValidationPassed: conflicts.length === 0,
+    adjacentConflictCount: conflicts.length,
+    warnings: conflicts.length > 0
+      ? [`Adjacent companion conflicts: ${conflicts.join(", ")}`]
+      : [],
+  };
+
   return {
-    setup,
-    frostData,
-    selectedPlants: candidatePlants,
+    id: `plan-${Date.now()}`,
+    generatedAt: new Date().toISOString(),
+    generationMode: "deterministic",
+    profile,
+    region,
+    selectedPlants,
     grid,
     schedule,
     conflicts,
-    generatedAt: new Date().toISOString(),
+    validation,
   };
 }
 
-function selectCandidatePlants(setup: GardenSetup): Plant[] {
-  let pool: Plant[] = [...VEGETABLES];
-  if (setup.plantPreference === "Vegetables + Herbs" || setup.plantPreference === "Vegetables + Herbs + Flowers") {
+// ---------------------------------------------------------------------------
+// Plant selection
+// ---------------------------------------------------------------------------
+
+function selectPlants(profile: GardenProfile): PlantItem[] {
+  let pool: PlantItem[] = [...VEGETABLES];
+
+  if (
+    profile.plantPreference === "Vegetables + Herbs" ||
+    profile.plantPreference === "Vegetables + Herbs + Flowers"
+  ) {
     pool = [...pool, ...HERBS];
   }
-  if (setup.plantPreference === "Vegetables + Herbs + Flowers" || setup.plantPreference === "Vegetables + Flowers") {
+  if (
+    profile.plantPreference === "Vegetables + Herbs + Flowers" ||
+    profile.plantPreference === "Vegetables + Flowers"
+  ) {
     pool = [...pool, ...FLOWERS];
   }
-  
-  // Filter by sunlight: Full Shade can only grow shade-tolerant plants
-  // Partial Shade can grow partial + any; Full Sun gets everything
+
+  // Sunlight filtering
   pool = pool.filter(p => {
-    if (setup.sunlight === "Full Sun") return true;
-    if (setup.sunlight === "Partial Shade") return p.minSunlight === "Partial Shade" || p.minSunlight === "Full Sun";
-    // Full Shade: only partial shade tolerant plants
+    if (profile.sunlight === "Full Sun") return true;
+    if (profile.sunlight === "Partial Shade") {
+      return p.minSunlight === "Partial Shade" || p.minSunlight === "Full Sun";
+    }
+    // Full Shade: only shade-tolerant plants
     return p.minSunlight === "Partial Shade";
   });
-  
-  // Container gardens: exclude large-spacing plants
-  if (setup.soilType === "Container/Pots") {
+
+  // Container gardens: exclude plants that need more than 1 sq ft of spacing
+  if (profile.soilType === "Container/Pots") {
     pool = pool.filter(p => p.spacingFt <= 1);
   }
-  
-  // Calculate how many plants fit given the garden area
-  const totalArea = setup.lengthFt * setup.widthFt;
-  const selected: Plant[] = [];
-  let usedArea = 0;
-  
-  // Sort by spacing ascending (fill with more variety)
+
+  // Small garden: reduce variety to compact plants only
+  const totalArea = profile.lengthFt * profile.widthFt;
+  if (totalArea < 16) {
+    pool = pool.filter(p => p.spacingFt <= 1);
+  }
+
+  // Select plants that fit within the garden area (one instance each)
   const sorted = [...pool].sort((a, b) => a.spacingFt - b.spacingFt);
-  
+  const selected: PlantItem[] = [];
+  let usedArea = 0;
+
   for (const plant of sorted) {
-    const needed = Math.max(1, Math.floor(totalArea / sorted.length));
     const fits = Math.floor((totalArea - usedArea) / plant.spacingFt);
     if (fits >= 1) {
       selected.push(plant);
@@ -113,39 +121,45 @@ function selectCandidatePlants(setup: GardenSetup): Plant[] {
     }
     if (usedArea >= totalArea * 0.8) break;
   }
-  
+
   return selected.length > 0 ? selected : pool.slice(0, 4);
 }
 
-function buildGrid(plants: Plant[], lengthFt: number, widthFt: number): GridCell[][] {
-  // Grid is widthFt rows x lengthFt cols, each cell = 1 sq ft
+// ---------------------------------------------------------------------------
+// Garden grid — with adjacency-based companion validation
+// ---------------------------------------------------------------------------
+
+function buildGrid(plants: PlantItem[], lengthFt: number, widthFt: number): MapCell[][] {
   const rows = widthFt;
   const cols = lengthFt;
-  const grid: GridCell[][] = Array.from({ length: rows }, () =>
+
+  // Initialise empty grid
+  const grid: MapCell[][] = Array.from({ length: rows }, () =>
     Array.from({ length: cols }, () => ({ plant: null, hasConflict: false }))
   );
 
-  // Fill cells in a round-robin pattern
-  let plantIdx = 0;
+  // Round-robin plant fill
+  let idx = 0;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (plants.length === 0) break;
-      grid[r][c] = { plant: plants[plantIdx % plants.length], hasConflict: false };
-      plantIdx++;
+      grid[r][c] = { plant: plants[idx % plants.length], hasConflict: false };
+      idx++;
     }
   }
 
-  // PRD P0: validate adjacent cell pairings (4-directional neighbours)
+  // PRD P0: adjacency-based companion conflict check (4-directional neighbours)
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = grid[r][c];
       if (!cell.plant) continue;
-      const neighbours: GridCell[] = [
-        r > 0           ? grid[r - 1][c] : null,
-        r < rows - 1    ? grid[r + 1][c] : null,
-        c > 0           ? grid[r][c - 1] : null,
-        c < cols - 1    ? grid[r][c + 1] : null,
-      ].filter((n): n is GridCell => n !== null);
+
+      const neighbours: MapCell[] = [
+        r > 0        ? grid[r - 1][c] : null,
+        r < rows - 1 ? grid[r + 1][c] : null,
+        c > 0        ? grid[r][c - 1] : null,
+        c < cols - 1 ? grid[r][c + 1] : null,
+      ].filter((n): n is MapCell => n !== null);
 
       for (const nb of neighbours) {
         if (nb.plant && areConflicting(cell.plant.name, nb.plant.name)) {
@@ -159,35 +173,36 @@ function buildGrid(plants: Plant[], lengthFt: number, widthFt: number): GridCell
   return grid;
 }
 
-function buildSchedule(plants: Plant[], frostData: FrostData): WeekEntry[] {
+// ---------------------------------------------------------------------------
+// Weekly schedule — from today through first fall frost
+// ---------------------------------------------------------------------------
+
+function buildSchedule(plants: PlantItem[], region: GrowingRegion): WeeklyScheduleItem[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  // Parse frost dates for current year
-  const currentYear = today.getFullYear();
-  const lastFrostDate = parseFrostDate(frostData.lastSpringFrost, currentYear);
-  const firstFallFrostDate = parseFrostDate(frostData.firstFallFrost, currentYear);
-  
-  // Start from today (or beginning of current week)
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - startDate.getDay()); // go back to Sunday
-  
-  const weeks: WeekEntry[] = [];
-  const cursor = new Date(startDate);
-  
-  while (cursor <= firstFallFrostDate) {
+  const year = today.getFullYear();
+
+  const lastFrost = parseFrostDate(region.lastSpringFrost, year);
+  const firstFallFrost = parseFrostDate(region.firstFallFrost, year);
+
+  // Start from the beginning of the current week (Sunday)
+  const cursor = new Date(today);
+  cursor.setDate(cursor.getDate() - cursor.getDay());
+
+  const weeks: WeeklyScheduleItem[] = [];
+
+  while (cursor <= firstFallFrost) {
     const weekStart = new Date(cursor);
     const weekEnd = new Date(cursor);
     weekEnd.setDate(weekEnd.getDate() + 6);
-    
+
     const isCurrent = today >= weekStart && today <= weekEnd;
-    
     const actions: PlantAction[] = [];
-    
+
     for (const plant of plants) {
-      // Determine the action date for this plant
       if (plant.startIndoors && plant.indoorWeeksAhead) {
-        const indoorDate = new Date(lastFrostDate);
+        // Indoor start date
+        const indoorDate = new Date(lastFrost);
         indoorDate.setDate(indoorDate.getDate() - plant.indoorWeeksAhead * 7);
         if (indoorDate >= weekStart && indoorDate <= weekEnd) {
           actions.push({
@@ -196,8 +211,8 @@ function buildSchedule(plants: Plant[], frostData: FrostData): WeekEntry[] {
             description: `Start ${plant.name} indoors (${plant.indoorWeeksAhead} weeks before last frost)`,
           });
         }
-        // Transplant date = after last frost
-        const transplantDate = new Date(lastFrostDate);
+        // Transplant date = 1 week after last frost
+        const transplantDate = new Date(lastFrost);
         transplantDate.setDate(transplantDate.getDate() + 7);
         if (transplantDate >= weekStart && transplantDate <= weekEnd) {
           actions.push({
@@ -207,7 +222,7 @@ function buildSchedule(plants: Plant[], frostData: FrostData): WeekEntry[] {
           });
         }
       } else if (plant.directSow) {
-        const sowDate = new Date(lastFrostDate);
+        const sowDate = new Date(lastFrost);
         sowDate.setDate(sowDate.getDate() - plant.weeksBeforeFrost * 7);
         if (sowDate >= weekStart && sowDate <= weekEnd) {
           actions.push({
@@ -218,24 +233,28 @@ function buildSchedule(plants: Plant[], frostData: FrostData): WeekEntry[] {
         }
       }
     }
-    
+
     weeks.push({
       weekLabel: `Week of ${weekStart.toLocaleDateString("en-CA", { month: "short", day: "numeric" })}`,
-      weekStart: new Date(weekStart),
+      weekStartDate: weekStart.toISOString(),
       isCurrent,
+      hasActions: actions.length > 0,
       actions,
-      explanation: actions.length === 0
-        ? "No actions this week — just water and watch!"
-        : `${actions.length} action${actions.length > 1 ? "s" : ""} this week: ${actions.map(a => a.plant.name).join(", ")}`,
+      notes: actions.length === 0
+        ? "No actions this week — water and watch! 💧"
+        : `${actions.length} action${actions.length > 1 ? "s" : ""}: ${actions.map(a => a.plant.name).join(", ")}`,
     });
-    
+
     cursor.setDate(cursor.getDate() + 7);
   }
-  
+
   return weeks;
 }
 
-/** Parse "May 14" into a Date for the given year */
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function parseFrostDate(dateStr: string, year: number): Date {
   return new Date(`${dateStr} ${year}`);
 }

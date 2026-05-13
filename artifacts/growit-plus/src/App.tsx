@@ -5,30 +5,24 @@ import LandingPage from "@/pages/LandingPage";
 import QuestionnairePage from "@/pages/QuestionnairePage";
 import FrostConfirmPage from "@/pages/FrostConfirmPage";
 import PlanPage from "@/pages/PlanPage";
-import { GardenSetup, GardenPlan } from "@/data/plan-generator";
 import MobileShell from "@/components/MobileShell";
+import type { GardenProfile, GeneratedPlan } from "@/types/garden";
 
 type Step = "landing" | "questionnaire" | "frost-confirm" | "plan";
 
 export default function App() {
-  const [step, setStep] = useState<Step>("landing");
-  const [setup, setSetup] = useState<GardenSetup | null>(null);
-  const [plan, setPlan] = useState<GardenPlan | null>(null);
+  const [step, setStep]           = useState<Step>("landing");
+  const [profile, setProfile]     = useState<GardenProfile | null>(null);
+  const [plan, setPlan]           = useState<GeneratedPlan | null>(null);
   const [hasSavedPlan, setHasSavedPlan] = useState(false);
 
   useEffect(() => {
-    const savedPlan = loadPlan();
-    if (savedPlan) {
-      setHasSavedPlan(true);
-    }
+    if (loadPlan()) setHasSavedPlan(true);
   }, []);
 
   const handleRestorePlan = () => {
-    const savedPlan = loadPlan();
-    if (savedPlan) {
-      setPlan(savedPlan);
-      setStep("plan");
-    }
+    const saved = loadPlan();
+    if (saved) { setPlan(saved); setStep("plan"); }
     setHasSavedPlan(false);
   };
 
@@ -39,7 +33,7 @@ export default function App() {
 
   const startOver = () => {
     clearPlan();
-    setSetup(null);
+    setProfile(null);
     setPlan(null);
     setStep("landing");
   };
@@ -47,14 +41,30 @@ export default function App() {
   return (
     <MobileShell>
       <div className="w-full h-full flex flex-col items-center bg-cream text-forest font-sans overflow-hidden">
+
+        {/* Saved-plan restore banner */}
         {hasSavedPlan && step === "landing" && (
           <div className="w-full bg-forest text-cream p-4 flex flex-col sm:flex-row justify-between items-center z-50 shrink-0 gap-3">
-            <p className="text-sm font-medium text-center sm:text-left">You have a saved garden plan. Restore it?</p>
+            <p className="text-sm font-medium text-center sm:text-left">
+              You have a saved garden plan. Restore it?
+            </p>
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={handleRestorePlan} className="bg-gold text-forest hover:bg-gold/90 rounded-full" data-testid="btn-restore-plan">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleRestorePlan}
+                className="bg-gold text-forest hover:bg-gold/90 rounded-full"
+                data-testid="btn-restore-plan"
+              >
                 Restore
               </Button>
-              <Button variant="outline" size="sm" onClick={handleDiscardPlan} className="bg-transparent border-cream text-cream hover:bg-cream hover:text-forest rounded-full" data-testid="btn-discard-plan">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDiscardPlan}
+                className="bg-transparent border-cream text-cream hover:bg-cream hover:text-forest rounded-full"
+                data-testid="btn-discard-plan"
+              >
                 Discard
               </Button>
             </div>
@@ -62,26 +72,25 @@ export default function App() {
         )}
 
         <main className="w-full flex-grow flex flex-col relative overflow-hidden">
-          {step === "landing" && <LandingPage onStart={() => setStep("questionnaire")} />}
+          {step === "landing" && (
+            <LandingPage onStart={() => setStep("questionnaire")} />
+          )}
+
           {step === "questionnaire" && (
             <QuestionnairePage
-              onNext={(data) => {
-                setSetup(data);
-                setStep("frost-confirm");
-              }}
+              onNext={p => { setProfile(p); setStep("frost-confirm"); }}
               onBack={() => setStep("landing")}
             />
           )}
-          {step === "frost-confirm" && setup && (
+
+          {step === "frost-confirm" && profile && (
             <FrostConfirmPage
-              setup={setup}
-              onConfirm={(generatedPlan) => {
-                setPlan(generatedPlan);
-                setStep("plan");
-              }}
+              profile={profile}
+              onConfirm={generatedPlan => { setPlan(generatedPlan); setStep("plan"); }}
               onBack={() => setStep("questionnaire")}
             />
           )}
+
           {step === "plan" && plan && (
             <PlanPage plan={plan} onStartOver={startOver} />
           )}
