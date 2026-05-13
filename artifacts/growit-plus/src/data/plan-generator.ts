@@ -31,7 +31,7 @@ export type { GardenProfile, GrowingRegion, GeneratedPlan, MapCell, WeeklySchedu
 export function generatePlan(profile: GardenProfile, region: GrowingRegion): GeneratedPlan {
   const { plants: selectedPlants, cautionNotes } = selectPlants(profile);
   const grid       = buildGrid(selectedPlants, profile.lengthFt, profile.widthFt);
-  const schedule   = buildSchedule(selectedPlants, region);
+  const schedule   = buildSchedule(selectedPlants, region, profile);
 
   // Collect names of plants that have an adjacent conflict in the grid
   const conflictSet = new Set<string>();
@@ -496,7 +496,52 @@ function buildGrid(plants: PlantItem[], lengthFt: number, widthFt: number): MapC
 // Weekly schedule — from today through first fall frost
 // ---------------------------------------------------------------------------
 
-function buildSchedule(plants: PlantItem[], region: GrowingRegion): WeeklyScheduleItem[] {
+/**
+ * Planting depth reference by plant ID.
+ * Values are plain strings already formatted for display.
+ */
+const SOWING_DEPTH: Record<string, string> = {
+  carrots:      "Sow 6 mm (¼ in) deep · thin to 5 cm (2 in) apart",
+  radishes:     "Sow 1 cm (½ in) deep · 2.5 cm (1 in) apart",
+  spinach:      "Sow 1 cm (½ in) deep · 5 cm (2 in) apart",
+  lettuce:      "Sow 3 mm (⅛ in) deep · press firmly · keep moist",
+  peas:         "Sow 2.5 cm (1 in) deep · 5 cm (2 in) apart",
+  beans:        "Sow 2.5 cm (1 in) deep · 7–10 cm (3–4 in) apart",
+  beets:        "Sow 1 cm (½ in) deep · thin to 10 cm (4 in) apart",
+  "swiss-chard":"Sow 1 cm (½ in) deep · thin to 20 cm (8 in) apart",
+  potatoes:     "Plant 10 cm (4 in) deep · 30 cm (12 in) apart",
+  chives:       "Sow 6 mm (¼ in) deep · scatter thinly",
+  dill:         "Sprinkle on surface · press gently · do not cover",
+  cilantro:     "Sow 6 mm (¼ in) deep · thin to 5 cm (2 in) apart",
+  marigolds:    "Sow 6 mm (¼ in) deep · 30 cm (12 in) apart",
+  nasturtiums:  "Sow 2.5 cm (1 in) deep · cover lightly",
+  calendula:    "Sow 6 mm (¼ in) deep · thin to 15 cm (6 in) apart",
+  zinnias:      "Sow 6 mm (¼ in) deep · 15–20 cm (6–8 in) apart",
+  cosmos:       "Sprinkle on surface · press gently · 30 cm (12 in) apart",
+  sunflowers:   "Sow 2.5 cm (1 in) deep · 45 cm (18 in) apart",
+  "sweet-peas": "Sow 2.5 cm (1 in) deep · 7 cm (3 in) apart · soak overnight first",
+};
+
+const TRANSPLANT_DEPTH = "Plant at pot depth · firm soil around roots · water in well";
+
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function weekSunday(date: Date): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay());
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function buildSchedule(
+  plants: PlantItem[],
+  region: GrowingRegion,
+  _profile: GardenProfile,
+): WeeklyScheduleItem[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const year = today.getFullYear();
@@ -504,62 +549,131 @@ function buildSchedule(plants: PlantItem[], region: GrowingRegion): WeeklySchedu
   const lastFrost      = parseFrostDate(region.lastSpringFrost, year);
   const firstFallFrost = parseFrostDate(region.firstFallFrost, year);
 
-  // Start from Sunday of the current week
-  const cursor = new Date(today);
-  cursor.setDate(cursor.getDate() - cursor.getDay());
+  // ── Build action map: week-sunday ISO string → PlantAction[] ──────────
+  const actionMap = new Map<string, PlantAction[]>();
 
-  const weeks: WeeklyScheduleItem[] = [];
+  const push = (date: Date, action: PlantAction) => {
+    const key = weekSunday(date).toISOString();
+    if (!actionMap.has(key)) actionMap.set(key, []);
+    actionMap.get(key)!.push(action);
+  };
 
-  while (cursor <= firstFallFrost) {
-    const weekStart = new Date(cursor);
-    const weekEnd   = new Date(cursor);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+  for (const plant of plants) {
+    // ── Indoor-start plants ─────────────────────────────────────────────
+    if (plant.startIndoors && plant.indoorWeeksAhead) {
+      const indoorDate    = addDays(lastFrost, -plant.indoorWeeksAhead * 7);
+      const transplantDate = addDays(lastFrost, 7);
+      const isIndoorPast  = indoorDate < today;
 
-    const isCurrent = today >= weekStart && today <= weekEnd;
-    const actions: PlantAction[] = [];
+      if (!isIndoorPast) {
+        push(indoorDate, {
+          plant,
+          actionType: "start_indoors",
+          description: `Start ${plant.name} seeds indoors`,
+          timingNote: `${plant.indoorWeeksAhead} weeks before your last spring frost (${region.lastSpringFrost}) — gives seedlings time to reach transplant size`,
+          depthNote: SOWING_DEPTH[plant.id],
+        });
+      } else {
+        // Missed the indoor window — recommend buying from a garden centre
+        push(transplantDate, {
+          plant,
+          actionType: "buy_transplant",
+          description: `Buy ${plant.name} seedlings from a garden centre`,
+          timingNote: `The indoor-start window (${plant.indoorWeeksAhead} wks before frost) has passed — purchasing transplants is the best option now`,
+        });
+      }
 
-    for (const plant of plants) {
-      if (plant.startIndoors && plant.indoorWeeksAhead) {
-        const indoorDate = new Date(lastFrost);
-        indoorDate.setDate(indoorDate.getDate() - plant.indoorWeeksAhead * 7);
-        if (indoorDate >= weekStart && indoorDate <= weekEnd) {
-          actions.push({
+      push(transplantDate, {
+        plant,
+        actionType: "transplant",
+        description: `Transplant ${plant.name} outdoors`,
+        timingNote: `1 week after your last spring frost (${region.lastSpringFrost}), once soil has warmed to 10 °C`,
+        depthNote: TRANSPLANT_DEPTH,
+      });
+
+      // Bloom watch for indoor-started flowers
+      if (plant.type === "flower") {
+        const bloomDate = addDays(transplantDate, plant.daysToMaturity);
+        if (bloomDate <= firstFallFrost) {
+          push(bloomDate, {
             plant,
-            actionType: "start_indoors",
-            description: `Start ${plant.name} indoors (${plant.indoorWeeksAhead} weeks before last frost)`,
-          });
-        }
-        const transplantDate = new Date(lastFrost);
-        transplantDate.setDate(transplantDate.getDate() + 7);
-        if (transplantDate >= weekStart && transplantDate <= weekEnd) {
-          actions.push({
-            plant,
-            actionType: "transplant",
-            description: `Transplant ${plant.name} seedlings outdoors`,
-          });
-        }
-      } else if (plant.directSow) {
-        const sowDate = new Date(lastFrost);
-        sowDate.setDate(sowDate.getDate() - plant.weeksBeforeFrost * 7);
-        if (sowDate >= weekStart && sowDate <= weekEnd) {
-          actions.push({
-            plant,
-            actionType: "direct_sow",
-            description: `Direct sow ${plant.name} outdoors`,
+            actionType: "bloom_watch",
+            description: `${plant.name} should begin blooming`,
+            timingNote: `~${plant.daysToMaturity} days after transplanting outdoors`,
           });
         }
       }
     }
 
+    // ── Direct-sow plants ───────────────────────────────────────────────
+    if (plant.directSow) {
+      const sowDate = addDays(lastFrost, -plant.weeksBeforeFrost * 7);
+
+      push(sowDate, {
+        plant,
+        actionType: "direct_sow",
+        description: `Direct sow ${plant.name} outdoors`,
+        timingNote: plant.weeksBeforeFrost > 0
+          ? `${plant.weeksBeforeFrost} week${plant.weeksBeforeFrost !== 1 ? "s" : ""} before last frost (${region.lastSpringFrost}) — this plant tolerates light frost`
+          : `After your last spring frost (${region.lastSpringFrost}), when the risk of frost has passed`,
+        depthNote: SOWING_DEPTH[plant.id],
+      });
+
+      // Bloom watch for direct-sown flowers
+      if (plant.type === "flower") {
+        const bloomDate = addDays(sowDate, plant.daysToMaturity);
+        if (bloomDate <= firstFallFrost) {
+          push(bloomDate, {
+            plant,
+            actionType: "bloom_watch",
+            description: `${plant.name} should begin blooming`,
+            timingNote: `~${plant.daysToMaturity} days after sowing — deadhead regularly to extend blooming`,
+          });
+        }
+      }
+    }
+  }
+
+  // ── Maintenance check-ins (not tied to specific plants) ───────────────
+  const maint1 = addDays(lastFrost, 21);  // ~3 weeks after last frost
+  const maint2 = addDays(lastFrost, 49);  // ~7 weeks after last frost
+
+  if (maint1 >= today && maint1 <= firstFallFrost) {
+    push(maint1, {
+      actionType: "maintenance",
+      description: "Thin seedlings, do first weeding, and check for pests",
+      timingNote: `3 weeks after last frost (${region.lastSpringFrost}) — seedlings have their first true leaves; remove weaker ones to give winners room`,
+    });
+  }
+  if (maint2 >= today && maint2 <= firstFallFrost) {
+    push(maint2, {
+      actionType: "maintenance",
+      description: "Deep-water, side-dress with compost, and stake tall plants",
+      timingNote: "Mid-season care — consistent moisture and feeding now pays off in August harvest",
+    });
+  }
+
+  // ── Build the week list ────────────────────────────────────────────────
+  const cursor = weekSunday(today);
+  const weeks: WeeklyScheduleItem[] = [];
+
+  while (cursor <= firstFallFrost) {
+    const weekStart = new Date(cursor);
+    const weekEnd   = addDays(weekStart, 6);
+    const isCurrent = today >= weekStart && today <= weekEnd;
+    const actions   = actionMap.get(weekStart.toISOString()) ?? [];
+
+    const label = `${weekStart.toLocaleDateString("en-CA", { month: "short", day: "numeric" })}–${weekEnd.toLocaleDateString("en-CA", { month: "short", day: "numeric" })}`;
+
     weeks.push({
-      weekLabel:     `Week of ${weekStart.toLocaleDateString("en-CA", { month: "short", day: "numeric" })}`,
+      weekLabel:     label,
       weekStartDate: weekStart.toISOString(),
       isCurrent,
       hasActions:    actions.length > 0,
       actions,
       notes: actions.length === 0
-        ? "No actions this week — water and watch! 💧"
-        : `${actions.length} action${actions.length > 1 ? "s" : ""}: ${actions.map(a => a.plant.name).join(", ")}`,
+        ? "No actions this week — just water and watch! 💧"
+        : actions.map(a => a.plant?.name ?? "Garden care").join(", "),
     });
 
     cursor.setDate(cursor.getDate() + 7);

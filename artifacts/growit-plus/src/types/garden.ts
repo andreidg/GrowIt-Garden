@@ -11,8 +11,11 @@ export type PlantType = "vegetable" | "herb" | "flower";
 
 export type ActionType =
   | "start_indoors"
+  | "buy_transplant"
   | "direct_sow"
   | "transplant"
+  | "maintenance"
+  | "bloom_watch"
   | "harvest_soon";
 
 export type SunlightLevel = "Full Sun" | "Partial Shade" | "Full Shade";
@@ -122,9 +125,11 @@ export interface MapCell {
 
 /** A single planting action within a weekly schedule entry. */
 export interface PlantAction {
-  plant: PlantItem;
+  plant?: PlantItem;        // absent for maintenance/general actions
   actionType: ActionType;
   description: string;
+  timingNote?: string;      // plain-language frost-relative explanation
+  depthNote?: string;       // sowing depth / spacing in user's unit
 }
 
 /**
