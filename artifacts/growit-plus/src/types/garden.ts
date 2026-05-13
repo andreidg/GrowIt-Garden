@@ -27,7 +27,8 @@ export type PlantPreference =
   | "Vegetables Only"
   | "Vegetables + Herbs"
   | "Vegetables + Herbs + Flowers"
-  | "Vegetables + Flowers";
+  | "Flowers + Herbs"
+  | "Flowers Only";
 
 /** The measurement system chosen by the user for input and display. */
 export type UnitSystem = "imperial" | "metric";

@@ -72,19 +72,23 @@ export function generatePlan(profile: GardenProfile, region: GrowingRegion): Gen
 // ---------------------------------------------------------------------------
 
 function selectPlants(profile: GardenProfile): PlantItem[] {
-  let pool: PlantItem[] = [...VEGETABLES];
+  let pool: PlantItem[] = [];
 
-  if (
-    profile.plantPreference === "Vegetables + Herbs" ||
-    profile.plantPreference === "Vegetables + Herbs + Flowers"
-  ) {
-    pool = [...pool, ...HERBS];
-  }
-  if (
-    profile.plantPreference === "Vegetables + Herbs + Flowers" ||
-    profile.plantPreference === "Vegetables + Flowers"
-  ) {
-    pool = [...pool, ...FLOWERS];
+  const pref = profile.plantPreference;
+
+  // Build pool based on preference
+  if (pref === "Vegetables Only") {
+    pool = [...VEGETABLES];
+  } else if (pref === "Vegetables + Herbs") {
+    pool = [...VEGETABLES, ...HERBS];
+  } else if (pref === "Vegetables + Herbs + Flowers") {
+    pool = [...VEGETABLES, ...HERBS, ...FLOWERS];
+  } else if (pref === "Flowers + Herbs") {
+    pool = [...FLOWERS, ...HERBS];
+  } else if (pref === "Flowers Only") {
+    pool = [...FLOWERS];
+  } else {
+    pool = [...VEGETABLES];
   }
 
   // Sunlight filtering
