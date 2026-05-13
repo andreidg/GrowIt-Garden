@@ -168,6 +168,7 @@ export interface GeneratedPlan {
   id: string;
   generatedAt: string;              // ISO date string
   generationMode: "deterministic" | "ai";
+  fallbackReason?: string;          // set when AI was attempted but fell back to deterministic
   profile: GardenProfile;
   region: GrowingRegion;
   selectedPlants: PlantItem[];

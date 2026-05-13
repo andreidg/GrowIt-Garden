@@ -73,6 +73,69 @@ export function generatePlan(profile: GardenProfile, region: GrowingRegion): Gen
   };
 }
 
+/**
+ * Build a complete plan from a pre-selected list of plants.
+ * Used by the AI path: plant selection comes from the AI, but all structural
+ * operations (grid, schedule, validation) remain deterministic.
+ *
+ * @param overrides - Optional AI-generated narrative text. Falls back to the
+ *   deterministic builders if any field is absent.
+ */
+export function buildPlanFromSelection(
+  profile:  GardenProfile,
+  region:   GrowingRegion,
+  selectedPlants: PlantItem[],
+  overrides?: {
+    timingExplanation?: string;
+    companionNotes?:    string[];
+    cautionNotes?:      string[];
+    fallbackReason?:    string;
+  },
+): GeneratedPlan {
+  const grid     = buildGrid(selectedPlants, profile.lengthFt, profile.widthFt);
+  const schedule = buildSchedule(selectedPlants, region, profile);
+
+  const conflictSet = new Set<string>();
+  for (const row of grid) {
+    for (const cell of row) {
+      if (cell.hasConflict && cell.plant) conflictSet.add(cell.plant.name);
+    }
+  }
+  const conflicts = Array.from(conflictSet);
+
+  const validation: ValidationResult = {
+    plantWhitelistPassed:     selectedPlants.every(p => p.isWhitelisted),
+    companionValidationPassed: conflicts.length === 0,
+    adjacentConflictCount:    conflicts.length,
+    warnings: conflicts.length > 0
+      ? [`Adjacent companion conflicts: ${conflicts.join(", ")}`]
+      : [],
+  };
+
+  const timingExplanation = overrides?.timingExplanation
+    || buildTimingExplanation(profile, region, selectedPlants);
+  const companionNotes    = overrides?.companionNotes
+    || buildCompanionNotes(selectedPlants);
+  const cautionNotes      = overrides?.cautionNotes ?? [];
+
+  return {
+    id:             `plan-${Date.now()}`,
+    generatedAt:    new Date().toISOString(),
+    generationMode: "ai",
+    fallbackReason: overrides?.fallbackReason,
+    profile,
+    region,
+    selectedPlants,
+    grid,
+    schedule,
+    conflicts,
+    validation,
+    timingExplanation,
+    companionNotes,
+    cautionNotes,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Smart flower selection
 // ---------------------------------------------------------------------------

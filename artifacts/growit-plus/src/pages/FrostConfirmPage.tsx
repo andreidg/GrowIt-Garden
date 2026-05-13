@@ -1,23 +1,49 @@
+import { useState } from "react";
 import { GROWING_REGIONS } from "@/data/locations";
-import { generatePlan } from "@/data/plan-generator";
 import { savePlan } from "@/data/storage";
+import { generateAIPlan } from "@/data/ai-plan-client";
 import type { GardenProfile, GeneratedPlan } from "@/types/garden";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader } from "lucide-react";
 import { FrostCrystalIcon } from "@/components/illustrations/PlantIcons";
 
 interface FrostConfirmPageProps {
-  profile: GardenProfile;
+  profile:   GardenProfile;
   onConfirm: (plan: GeneratedPlan) => void;
-  onBack: () => void;
+  onBack:    () => void;
 }
+
+const LOADING_MESSAGES = [
+  "Analysing your growing conditions…",
+  "Selecting plants for your region…",
+  "Checking companion pairings…",
+  "Building your garden map…",
+];
 
 export default function FrostConfirmPage({ profile, onConfirm, onBack }: FrostConfirmPageProps) {
   const region = GROWING_REGIONS[profile.region];
+  const [generating, setGenerating] = useState(false);
+  const [loadMsg, setLoadMsg]       = useState(LOADING_MESSAGES[0]!);
 
-  const handleGenerate = () => {
-    const plan = generatePlan(profile, region);
-    savePlan(plan);
-    onConfirm(plan);
+  const handleGenerate = async () => {
+    if (generating) return;
+    setGenerating(true);
+    setLoadMsg(LOADING_MESSAGES[0]!);
+
+    // Cycle through loading messages for visual feedback during AI call
+    const timers = LOADING_MESSAGES.slice(1).map((msg, i) =>
+      window.setTimeout(() => setLoadMsg(msg), (i + 1) * 2500)
+    );
+
+    try {
+      const { plan } = await generateAIPlan(profile, region);
+      timers.forEach(clearTimeout);
+      savePlan(plan);
+      onConfirm(plan);
+    } catch {
+      // generateAIPlan never rejects, but just in case
+      timers.forEach(clearTimeout);
+      setGenerating(false);
+    }
   };
 
   return (
@@ -26,8 +52,9 @@ export default function FrostConfirmPage({ profile, onConfirm, onBack }: FrostCo
       {/* Progress header */}
       <div className="px-6 pt-10 pb-4 flex items-center gap-4 sticky top-0 bg-cream z-10">
         <button
-          className="p-2 -ml-2 text-forest hover:bg-cream-dark/50 rounded-full transition-colors"
+          className="p-2 -ml-2 text-forest hover:bg-cream-dark/50 rounded-full transition-colors disabled:opacity-40"
           onClick={onBack}
+          disabled={generating}
           data-testid="btn-back-frost"
         >
           <ArrowLeft className="w-6 h-6" />
@@ -79,17 +106,42 @@ export default function FrostConfirmPage({ profile, onConfirm, onBack }: FrostCo
         {/* Explanation */}
         <div className="bg-cream-dark/30 rounded-2xl p-4 mb-10">
           <p className="text-sm text-forest/70 leading-relaxed">
-            These historical frost dates anchor your entire garden plan — from when to start seeds indoors to the last safe transplant date for {region.label}'s growing season.
+            These historical frost dates anchor your entire garden plan — from when to start seeds indoors
+            to the last safe transplant date for {region.label}'s growing season.
           </p>
         </div>
 
+        {/* Generate button */}
         <button
           onClick={handleGenerate}
-          className="w-full bg-forest text-cream text-lg font-semibold py-4 rounded-full shadow-md transition-transform active:scale-95"
+          disabled={generating}
+          className={[
+            "w-full text-lg font-semibold py-4 rounded-full shadow-md transition-all",
+            generating
+              ? "bg-forest/60 text-cream/70 cursor-not-allowed"
+              : "bg-forest text-cream active:scale-95",
+          ].join(" ")}
           data-testid="btn-generate-plan"
         >
-          Generate My Garden Plan
+          {generating ? (
+            <span className="flex items-center justify-center gap-3">
+              <Loader className="w-5 h-5 animate-spin" />
+              Generating…
+            </span>
+          ) : (
+            "Generate My Garden Plan"
+          )}
         </button>
+
+        {/* Loading message */}
+        {generating && (
+          <p
+            key={loadMsg}
+            className="text-center text-sm text-forest/50 mt-4 animate-in fade-in duration-500"
+          >
+            {loadMsg}
+          </p>
+        )}
       </div>
     </div>
   );
