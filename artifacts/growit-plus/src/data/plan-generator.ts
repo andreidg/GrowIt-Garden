@@ -1,6 +1,6 @@
 import { VEGETABLES, HERBS, FLOWERS, Plant } from "./plants";
 import { FrostData } from "./locations";
-import { detectConflicts } from "./companion-rules";
+import { detectConflicts, areConflicting } from "./companion-rules";
 
 export type SunlightLevel = "Full Sun" | "Partial Shade" | "Full Shade";
 export type SoilType = "Raised Bed" | "In-Ground Clay" | "In-Ground Loam" | "Container/Pots";
@@ -124,22 +124,38 @@ function buildGrid(plants: Plant[], lengthFt: number, widthFt: number): GridCell
   const grid: GridCell[][] = Array.from({ length: rows }, () =>
     Array.from({ length: cols }, () => ({ plant: null, hasConflict: false }))
   );
-  
-  const conflictSet = detectConflicts(plants.map(p => p.name));
+
+  // Fill cells in a round-robin pattern
   let plantIdx = 0;
-  
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (plants.length === 0) break;
-      const plant = plants[plantIdx % plants.length];
-      grid[r][c] = {
-        plant,
-        hasConflict: conflictSet.has(plant.name),
-      };
+      grid[r][c] = { plant: plants[plantIdx % plants.length], hasConflict: false };
       plantIdx++;
     }
   }
-  
+
+  // PRD P0: validate adjacent cell pairings (4-directional neighbours)
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = grid[r][c];
+      if (!cell.plant) continue;
+      const neighbours: GridCell[] = [
+        r > 0           ? grid[r - 1][c] : null,
+        r < rows - 1    ? grid[r + 1][c] : null,
+        c > 0           ? grid[r][c - 1] : null,
+        c < cols - 1    ? grid[r][c + 1] : null,
+      ].filter((n): n is GridCell => n !== null);
+
+      for (const nb of neighbours) {
+        if (nb.plant && areConflicting(cell.plant.name, nb.plant.name)) {
+          cell.hasConflict = true;
+          nb.hasConflict = true;
+        }
+      }
+    }
+  }
+
   return grid;
 }
 

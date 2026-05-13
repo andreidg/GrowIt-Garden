@@ -36,15 +36,15 @@ export const VEGETABLES: Plant[] = [
 ];
 
 export const HERBS: Plant[] = [
-  { name: "Basil",     type: "herb", emoji: "🌿", abbr: "BAS", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 30, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
+  { name: "Basil",     type: "herb", emoji: "🫙", abbr: "BAS", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 30, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
   { name: "Chives",    type: "herb", emoji: "🌱", abbr: "CHV", spacingFt: 0.25, directSow: true, startIndoors: false, daysToMaturity: 60, weeksBeforeFrost: 4,  actionType: "direct_sow",   minSunlight: "Full Sun" },
-  { name: "Parsley",   type: "herb", emoji: "🌿", abbr: "PAR", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 70, indoorWeeksAhead: 10, weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Partial Shade" },
-  { name: "Dill",      type: "herb", emoji: "🌿", abbr: "DIL", spacingFt: 0.5, directSow: true,  startIndoors: false, daysToMaturity: 40, weeksBeforeFrost: 0,  actionType: "direct_sow",   minSunlight: "Full Sun" },
+  { name: "Parsley",   type: "herb", emoji: "🍀", abbr: "PAR", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 70, indoorWeeksAhead: 10, weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Partial Shade" },
+  { name: "Dill",      type: "herb", emoji: "🌾", abbr: "DIL", spacingFt: 0.5, directSow: true,  startIndoors: false, daysToMaturity: 40, weeksBeforeFrost: 0,  actionType: "direct_sow",   minSunlight: "Full Sun" },
   { name: "Cilantro",  type: "herb", emoji: "🌿", abbr: "CIL", spacingFt: 0.25, directSow: true, startIndoors: false, daysToMaturity: 45, weeksBeforeFrost: 2,  actionType: "direct_sow",   minSunlight: "Partial Shade" },
-  { name: "Thyme",     type: "herb", emoji: "🌿", abbr: "THY", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 85, indoorWeeksAhead: 8,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
-  { name: "Oregano",   type: "herb", emoji: "🌿", abbr: "ORE", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 85, indoorWeeksAhead: 8,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
-  { name: "Mint",      type: "herb", emoji: "🌿", abbr: "MNT", spacingFt: 1,   directSow: false, startIndoors: true,  daysToMaturity: 60, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Partial Shade" },
-  { name: "Sage",      type: "herb", emoji: "🌿", abbr: "SAG", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 75, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
+  { name: "Thyme",     type: "herb", emoji: "🍵", abbr: "THY", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 85, indoorWeeksAhead: 8,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
+  { name: "Oregano",   type: "herb", emoji: "🫚", abbr: "ORE", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 85, indoorWeeksAhead: 8,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
+  { name: "Mint",      type: "herb", emoji: "🍃", abbr: "MNT", spacingFt: 1,   directSow: false, startIndoors: true,  daysToMaturity: 60, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Partial Shade" },
+  { name: "Sage",      type: "herb", emoji: "🌲", abbr: "SAG", spacingFt: 0.5, directSow: false, startIndoors: true,  daysToMaturity: 75, indoorWeeksAhead: 6,  weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
   { name: "Lavender",  type: "herb", emoji: "💜", abbr: "LAV", spacingFt: 2,   directSow: false, startIndoors: true,  daysToMaturity: 90, indoorWeeksAhead: 10, weeksBeforeFrost: 0, actionType: "start_indoors", minSunlight: "Full Sun" },
 ];
 

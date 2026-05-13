@@ -31,7 +31,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
     resolver: zodResolver(formSchema),
     defaultValues: {
       region: "Calgary",
-      lengthFt: 4,
+      lengthFt: 10,
       widthFt: 8,
       sunlight: "Full Sun",
       soilType: "Raised Bed",
@@ -81,7 +81,10 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
 
         {/* Region */}
         <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 flex flex-col gap-3">
-          <label className="text-base font-semibold text-forest">Where are you planting?</label>
+          <div>
+            <label className="text-base font-semibold text-forest">Growing Region</label>
+            <p className="text-xs text-forest/60 mt-0.5">Your region sets frost dates and plant recommendations.</p>
+          </div>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-forest/50" />
             <select
@@ -176,6 +179,11 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
               );
             })}
           </div>
+          {form.watch("sunlight") === "Full Shade" && (
+            <p className="text-sm text-terracotta font-medium bg-terracotta/10 p-3 rounded-xl border border-terracotta/20">
+              ⚠️ Full shade significantly limits food-growing potential. Only shade-tolerant greens and herbs can be recommended.
+            </p>
+          )}
         </div>
 
         {/* Soil Setup */}

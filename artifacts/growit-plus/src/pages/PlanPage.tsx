@@ -34,7 +34,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
         <div>
           <h2 className="text-lg font-black text-forest font-serif leading-tight">GrowIt+</h2>
           <p className="text-xs text-forest/70 font-medium mt-0.5">
-            {plan.setup.region} • {gardenSizeStr}
+            {plan.setup.region} · Zone {plan.frostData.zone} · {gardenSizeStr}
           </p>
         </div>
         <div className="flex gap-2 no-print">

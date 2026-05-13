@@ -42,6 +42,10 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           Plan My Garden
         </button>
         <p className="text-forest/60 text-xs mt-4 font-medium">No account required</p>
+        <p className="text-forest/40 text-xs mt-6">
+          <a href="#" className="underline underline-offset-2 hover:text-forest/60 transition-colors">Privacy</a>
+          {" · "}No data stored · Built for Alberta gardeners
+        </p>
       </div>
     </div>
   );
