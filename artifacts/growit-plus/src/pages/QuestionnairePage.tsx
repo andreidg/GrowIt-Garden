@@ -3,7 +3,7 @@ import { REGION_KEYS, GROWING_REGIONS } from "@/data/locations";
 import { VEGETABLES, HERBS, FLOWERS, FOLIAGE, type PlantItem } from "@/data/plants";
 import type { GardenProfile, SunlightLevel, SoilType, UnitSystem, GardenArea, CustomPlant, PlantType } from "@/types/garden";
 import { UNIT_CONFIG, capToMax, toInternalFt } from "@/utils/units";
-import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X, Search } from "lucide-react";
 import PhotoAnalyzer, { ConfidenceBadge, type Confidence } from "@/components/PhotoAnalyzer";
 
 interface QuestionnairePageProps {
@@ -208,6 +208,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
   const [customCategory,   setCustomCategory]   = useState<PlantType | "other">("vegetable");
   const [customNotes,      setCustomNotes]      = useState("");
   const [plantFilter,      setPlantFilter]      = useState<PlantFilter>("all");
+  const [plantSearch,      setPlantSearch]      = useState("");
   const [plantError,       setPlantError]       = useState(false);
 
   // ── Step 4 ───────────────────────────────────────────────────────────────
@@ -807,7 +808,26 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
             )}
 
             {/* Custom selection: full plant picker */}
-            {gardenGoal === "custom" && (
+            {gardenGoal === "custom" && (() => {
+              const q = plantSearch.trim().toLowerCase();
+              const isSearching = q.length > 0;
+              const matches = (p: PlantItem, categoryAliases: string[]) => {
+                if (!isSearching) return true;
+                if (p.name.toLowerCase().includes(q)) return true;
+                if (p.type.toLowerCase().includes(q)) return true;
+                return categoryAliases.some(a => a.toLowerCase().includes(q));
+              };
+              const vegFiltered     = VEGETABLES.filter(p => matches(p, ["vegetable", "vegetables", "veggies"]));
+              const herbFiltered    = HERBS.filter(p => matches(p, ["herb", "herbs"]));
+              const flowerFiltered  = FLOWERS.filter(p => matches(p, ["flower", "flowers", "blooms"]));
+              const foliageFiltered = FOLIAGE.filter(p => matches(p, ["foliage", "ornamental", "ornamentals", "greenery", "shrub", "groundcover"]));
+              const totalMatches = vegFiltered.length + herbFiltered.length + flowerFiltered.length + foliageFiltered.length;
+              const showVeg     = (isSearching ? vegFiltered.length     > 0 : (plantFilter === "all" || plantFilter === "vegetables"));
+              const showHerb    = (isSearching ? herbFiltered.length    > 0 : (plantFilter === "all" || plantFilter === "herbs"));
+              const showFlower  = (isSearching ? flowerFiltered.length  > 0 : (plantFilter === "all" || plantFilter === "flowers"));
+              const showFoliage = (isSearching ? foliageFiltered.length > 0 : (plantFilter === "all" || plantFilter === "foliage"));
+
+              return (
               <div className="flex flex-col gap-4">
                 <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
                   {(["all", "vegetables", "herbs", "flowers", "foliage"] as PlantFilter[]).map(f => (
@@ -819,33 +839,65 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                     </button>
                   ))}
                 </div>
-                {(plantFilter === "all" || plantFilter === "vegetables") && (
-                  <PlantSection title="Vegetables" emoji="🥕" plants={VEGETABLES}
+
+                {/* ── Search box (Custom selection only) ── */}
+                <div className="relative w-full">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-forest/40 pointer-events-none" />
+                  <input
+                    type="text"
+                    inputMode="search"
+                    value={plantSearch}
+                    onChange={e => setPlantSearch(e.target.value)}
+                    placeholder="Search plants…"
+                    aria-label="Search plants"
+                    className="w-full bg-[#f0ece4] border border-cream-dark/60 rounded-full pl-11 pr-11 py-2.5 text-sm text-forest placeholder:text-forest/40 focus:outline-none focus:border-[#1f3b2f] focus:ring-2 focus:ring-[#1f3b2f]/15 transition-all"
+                    data-testid="plant-search-input"
+                  />
+                  {plantSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setPlantSearch("")}
+                      aria-label="Clear search"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-forest/10 text-forest/70 hover:bg-forest/20 active:scale-95 transition-all"
+                      data-testid="plant-search-clear"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {showVeg && (
+                  <PlantSection title="Vegetables" emoji="🥕" plants={vegFiltered}
                     selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
                     onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
                     onRecommend={() => recommendForCategory(VEGETABLES, "vegetables")}
-                    recommendNote={recommendNotes["vegetables"]} />
+                    recommendNote={isSearching ? undefined : recommendNotes["vegetables"]} />
                 )}
-                {(plantFilter === "all" || plantFilter === "herbs") && (
-                  <PlantSection title="Herbs" emoji="🌿" plants={HERBS}
+                {showHerb && (
+                  <PlantSection title="Herbs" emoji="🌿" plants={herbFiltered}
                     selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
                     onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
                     onRecommend={() => recommendForCategory(HERBS, "herbs")}
-                    recommendNote={recommendNotes["herbs"]} />
+                    recommendNote={isSearching ? undefined : recommendNotes["herbs"]} />
                 )}
-                {(plantFilter === "all" || plantFilter === "flowers") && (
-                  <PlantSection title="Flowers" emoji="🌸" plants={FLOWERS}
+                {showFlower && (
+                  <PlantSection title="Flowers" emoji="🌸" plants={flowerFiltered}
                     selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
                     onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
                     onRecommend={() => recommendForCategory(FLOWERS, "flowers")}
-                    recommendNote={recommendNotes["flowers"]} />
+                    recommendNote={isSearching ? undefined : recommendNotes["flowers"]} />
                 )}
-                {(plantFilter === "all" || plantFilter === "foliage") && (
-                  <PlantSection title="Foliage & Ornamental" emoji="🌿" plants={FOLIAGE}
+                {showFoliage && (
+                  <PlantSection title="Foliage & Ornamental" emoji="🌿" plants={foliageFiltered}
                     selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
                     onToggleAll={makeToggleAll(FOLIAGE.map(p => p.id))}
                     onRecommend={() => recommendForCategory(FOLIAGE, "foliage")}
-                    recommendNote={recommendNotes["foliage"]} />
+                    recommendNote={isSearching ? undefined : recommendNotes["foliage"]} />
+                )}
+                {isSearching && totalMatches === 0 && (
+                  <div className="bg-cream-light border border-cream-dark/60 rounded-2xl px-4 py-6 text-center">
+                    <p className="text-sm text-forest/60">No plants match your search.</p>
+                  </div>
                 )}
                 {plantError && totalSelected === 0 && (
                   <div className="bg-terracotta/10 border border-terracotta/25 rounded-xl px-4 py-3">
@@ -853,7 +905,8 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                   </div>
                 )}
               </div>
-            )}
+              );
+            })()}
 
             {/* Custom plant entry — always visible */}
             <div className="border-t border-cream-dark pt-4">

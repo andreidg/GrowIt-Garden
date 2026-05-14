@@ -1,0 +1,77 @@
+Add a search box to the Custom Selection plant picker screen.
+
+This should only appear when the user selects “Custom selection” as the garden goal.
+
+Do not rebuild the app from scratch. Add this as a targeted UI and filtering improvement.
+
+DESIGN REQUIREMENTS:
+- Add a pill-shaped input field with border-radius: 999px.
+- Include a search icon on the left inside the input.
+- Placeholder text: “Search plants…”
+- Add a small circular ✕ clear button on the right side of the input, but only when there is text typed.
+- Match the existing GrowIt colour scheme:
+  - dark green focus border: #1f3b2f
+  - light beige input background: #f0ece4
+- Place the search bar between:
+  1. the category filter tabs, such as All / Vegetables / Herbs / Flowers / Foliage & Ornamental Plants
+  2. the section header, such as “🥕 VEGETABLES”
+- Make sure the search bar is mobile-friendly and does not overflow the screen.
+
+BEHAVIOUR REQUIREMENTS:
+- The search filters the plant list in real time as the user types.
+- Search should be case-insensitive.
+- Search should match plant names and, if available, category names or aliases.
+- Search should apply across all plant categories, regardless of which category tab is currently active.
+- If no plants match the search query, show:
+  “No plants match your search.”
+- Clicking the ✕ button clears the search input and restores the full plant list.
+- The “No plants in this category suit your current garden conditions” notice should be hidden while the user is actively searching.
+- The search bar should be hidden in non-custom garden goal modes.
+
+CATEGORY COVERAGE:
+The search must include all plant categories currently supported by the app:
+- Vegetables
+- Herbs
+- Flowers
+- Foliage & Ornamental Plants, if already implemented
+
+IMPORTANT LOGIC:
+- Do not change how selected plants are stored.
+- Do not change Custom Selection generation logic.
+- Do not auto-select search results.
+- Searching should only filter what is visible in the picker.
+- Existing selected plants should remain selected even if the search query hides them temporarily.
+- Clearing the search should restore the previous view and preserve selections.
+
+FINAL QA CASES:
+After implementation, confirm:
+
+Case A:
+- Custom selection is active.
+- Type “mar”.
+Expected: matching plants such as Marigolds appear.
+
+Case B:
+- Custom selection is active.
+- Type “host”.
+Expected: Hostas appear if Foliage & Ornamental Plants has been added.
+
+Case C:
+- Custom selection is active.
+- Type a nonsense search like “zzzzzz.”
+Expected: “No plants match your search.”
+
+Case D:
+- Select a plant, then search for another plant.
+Expected: the first selected plant remains selected even if hidden by search.
+
+Case E:
+- Clear the search with the ✕ button.
+Expected: full plant list returns and previous selections remain.
+
+Case F:
+- Switch out of Custom selection mode.
+Expected: search bar is hidden.
+
+Do not add new major features.
+Do not add authentication, payments, Supabase, Mixpanel, premium enforcement, live chat, pest diagnosis, e-commerce, or admin dashboard.
