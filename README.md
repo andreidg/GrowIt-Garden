@@ -1,4 +1,4 @@
-# GrowIt+
+# GrowIt
 
 **A location-aware, mobile-first garden planning web app built for Alberta homeowners.**
 
@@ -6,13 +6,13 @@
 
 ## Product Description
 
-GrowIt+ is a free, account-optional web application that generates a personalised vegetable, herb, and flower garden plan calibrated to your specific Alberta location. You answer four questions — where you live, how big your garden beds are, and what you want to grow — and GrowIt+ produces a colour-coded garden map, a week-by-week planting schedule anchored to your city's historical frost dates, companion-planting conflict detection, and a live 7-day weather risk advisory. No sign-up, no spreadsheets, no guesswork.
+GrowIt is a free, account-optional web application that generates a personalised vegetable, herb, and flower garden plan calibrated to your specific Alberta location. You answer four questions — where you live, how big your garden beds are, and what you want to grow — and GrowIt produces a colour-coded garden map, a week-by-week planting schedule anchored to your city's historical frost dates, companion-planting conflict detection, and a live 7-day weather risk advisory. No sign-up, no spreadsheets, no guesswork.
 
 ---
 
 ## Business Problem
 
-Alberta's growing season is short (as few as 100–120 frost-free days), highly variable by location, and frequently misunderstood by home gardeners who rely on generic national advice. Planting even one or two weeks too early or too late can mean losing an entire crop. Existing gardening apps are designed for temperate North American climates and do not account for Alberta's Zone 3–4a conditions, city-level microclimates, or the practical reality that most home gardeners have never heard of a "last spring frost date." GrowIt+ solves this by making location-specific frost-date intelligence the foundation of every plan.
+Alberta's growing season is short (as few as 100–120 frost-free days), highly variable by location, and frequently misunderstood by home gardeners who rely on generic national advice. Planting even one or two weeks too early or too late can mean losing an entire crop. Existing gardening apps are designed for temperate North American climates and do not account for Alberta's Zone 3–4a conditions, city-level microclimates, or the practical reality that most home gardeners have never heard of a "last spring frost date." GrowIt solves this by making location-specific frost-date intelligence the foundation of every plan.
 
 ---
 
@@ -82,7 +82,7 @@ Alberta's growing season is short (as few as 100–120 frost-free days), highly 
 
 ## How AI-Assisted Development Was Used
 
-GrowIt+ was built as a project for **ENTI 633 Generative AI and Prompting** at the Haskayne School of Business, University of Calgary. The entire codebase was produced through iterative prompting of a generative AI coding assistant (Replit Agent / GPT-4-class model). Key AI-assisted steps included:
+GrowIt was built as a project for **ENTI 633 Generative AI and Prompting** at the Haskayne School of Business, University of Calgary. The entire codebase was produced through iterative prompting of a generative AI coding assistant (Replit Agent / GPT-4-class model). Key AI-assisted steps included:
 
 1. **Architecture design** — prompting the AI to propose a monorepo structure, API contract-first workflow, and deterministic-first plan generation strategy before writing any code
 2. **Feature implementation** — describing each feature in plain language and having the AI generate TypeScript components, hooks, and route handlers
@@ -96,7 +96,7 @@ The project demonstrates that a non-engineer can use generative AI to ship a fun
 
 ## Location-Specific Frost Dates and Plant Rules
 
-Every Alberta city in GrowIt+ has a hardcoded frost date table (`artifacts/growit-plus/src/data/locations.ts`):
+Every Alberta city in GrowIt has a hardcoded frost date table (`artifacts/growit-plus/src/data/locations.ts`):
 
 | City | Zone | Last Spring Frost | First Fall Frost |
 |---|---|---|---|
