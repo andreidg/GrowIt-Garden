@@ -1,4 +1,4 @@
-# GrowIt
+# SproutIt
 
 Location-aware, mobile-first garden planning web app for Alberta homeowners. Generates personalised planting plans with frost-date-aware schedules, companion planting logic, and a garden map — all without requiring an account.
 
@@ -56,7 +56,7 @@ Location-aware, mobile-first garden planning web app for Alberta homeowners. Gen
 
 ## User preferences
 
-- App name: GrowIt (no "+")
+- App name: SproutIt (no "+")
 - Target audience: Alberta homeowners, mobile-first
 - Colors: forest #1A3C2E, cream #F5F0E8, cream-dark #E8DFD1, terracotta #C4622D, gold #D4A853
 

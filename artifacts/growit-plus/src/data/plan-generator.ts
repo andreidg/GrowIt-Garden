@@ -1,5 +1,5 @@
 /**
- * GrowIt Deterministic Plan Generator — v4
+ * SproutIt Deterministic Plan Generator — v4
  * Selects plants with smart flower logic, builds the garden grid (adjacency companion
  * validation), generates a week-by-week schedule anchored to regional frost dates,
  * and produces human-readable timing + companion notes for the UI.
@@ -73,7 +73,7 @@ function customToPlantItem(cp: CustomPlant): PlantItem {
     isWhitelisted: false,
     riskLevel: "normal",
     notes: [
-      "Custom entry. GrowIt does not yet have verified local growing rules for this item.",
+      "Custom entry. SproutIt does not yet have verified local growing rules for this item.",
       cp.notes,
     ].filter(Boolean).join(" "),
   };
@@ -388,7 +388,7 @@ function selectFromUserList(profile: GardenProfile, customItems: PlantItem[]): S
 function selectPlants(profile: GardenProfile): SelectionResult {
   const customItems   = (profile.customPlants ?? []).map(customToPlantItem);
   const customCautions = customItems.map(cp =>
-    `"${cp.name}" is a custom plant. GrowIt does not yet have verified local growing rules for this item. ` +
+    `"${cp.name}" is a custom plant. SproutIt does not yet have verified local growing rules for this item. ` +
     `The schedule timing shown is approximate — research the best planting window for your specific variety.`
   );
 

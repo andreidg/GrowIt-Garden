@@ -106,9 +106,9 @@ export default function PlanPage({ plan, onStartOver, onPlanUpdated }: PlanPageP
 
   // ── Share plan via Web Share API or clipboard ────────────────────────────
   const sharePlan = async () => {
-    const title = "My GrowIt Garden Plan";
+    const title = "My SproutIt Garden Plan";
     const text = [
-      `My GrowIt garden plan for ${region.label} (Zone ${region.zone}):`,
+      `My SproutIt garden plan for ${region.label} (Zone ${region.zone}):`,
       ``,
       `🌱 ${selectedPlants.length} plants:`,
       ...selectedPlants.slice(0, 8).map(p => `  • ${p.emoji} ${p.name}`),

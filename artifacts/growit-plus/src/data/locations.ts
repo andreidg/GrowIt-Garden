@@ -1,5 +1,5 @@
 /**
- * GrowIt Growing-Region Frost Data
+ * SproutIt Growing-Region Frost Data
  * PRD V10 Section 11.1 — hardcoded demo frost dates for Alberta regions.
  * Calgary is the default beachhead location; others are selectable.
  */

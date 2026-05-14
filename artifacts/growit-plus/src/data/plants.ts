@@ -1,5 +1,5 @@
 /**
- * GrowIt Regional Plant Whitelist — Zone 3b–4a (Alberta)
+ * SproutIt Regional Plant Whitelist — Zone 3b–4a (Alberta)
  * All plants validated for short-season growing conditions.
  * Source of truth: PRD V10 Section 11.2 + flower additions.
  */

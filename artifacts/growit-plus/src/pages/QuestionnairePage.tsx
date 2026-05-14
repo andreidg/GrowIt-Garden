@@ -341,7 +341,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
       note = "No plants in this category suit your current garden conditions — try adjusting the sunlight or soil settings.";
     } else {
       const ctx = soilType === "Container/Pots" ? "container" : `${sunlight.toLowerCase()} garden`;
-      note = `GrowIt picked ${pool.length} plant${pool.length !== 1 ? "s" : ""} suited to your ${ctx}.`;
+      note = `SproutIt picked ${pool.length} plant${pool.length !== 1 ? "s" : ""} suited to your ${ctx}.`;
     }
     setRecommendNotes(prev => ({ ...prev, [categoryKey]: note }));
   };
@@ -560,7 +560,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                     </div>
                     {capWarnings[area.id] && (
                       <p className="text-xs text-terracotta mb-2">
-                        GrowIt supports gardens up to {cfg.maxInput}{cfg.abbr} × {cfg.maxInput}{cfg.abbr}. Your dimensions have been adjusted.
+                        SproutIt supports gardens up to {cfg.maxInput}{cfg.abbr} × {cfg.maxInput}{cfg.abbr}. Your dimensions have been adjusted.
                       </p>
                     )}
                     {/* Quick presets */}
@@ -682,7 +682,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
               <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">Step 3 of 4</p>
               <h2 className="font-serif text-2xl font-semibold text-forest mb-1">What's your garden goal?</h2>
               <p className="text-sm text-forest/60 leading-relaxed">
-                GrowIt will recommend the right plants. You can add specific favourites below.
+                SproutIt will recommend the right plants. You can add specific favourites below.
               </p>
             </div>
 
@@ -718,7 +718,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
               return (
                 <div>
                   <p className="text-xs font-bold text-forest/40 uppercase tracking-widest mb-3">
-                    GrowIt recommends
+                    SproutIt recommends
                   </p>
                   {preview.length > 0 ? (
                     <>
@@ -757,7 +757,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                 {showAddPlants && (
                   <div className="flex flex-col gap-4 pb-2">
                     <p className="text-xs text-forest/55 leading-snug">
-                      These will be added on top of GrowIt's recommendations. Plants that don't suit your conditions will be noted in your plan.
+                      These will be added on top of SproutIt's recommendations. Plants that don't suit your conditions will be noted in your plan.
                     </p>
                     <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
                       {(["all", "vegetables", "herbs", "flowers", "foliage"] as PlantFilter[]).map(f => (

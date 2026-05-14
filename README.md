@@ -1,4 +1,4 @@
-# GrowIt
+# SproutIt
 
 **A location-aware, mobile-first garden planning web app built for Alberta homeowners.**
 
@@ -6,7 +6,7 @@
 
 ## Product Description
 
-GrowIt is a free, account-optional web application that generates a personalised vegetable, herb, and flower garden plan calibrated to your specific Alberta location. You answer four questions — where you live, how big your garden beds are, and what you want to grow — and GrowIt produces a colour-coded garden map, a week-by-week planting schedule anchored to your city's historical frost dates, and a live 7-day weather risk advisory. No sign-up, no spreadsheets, no guesswork.
+SproutIt is a free, account-optional web application that generates a personalised vegetable, herb, and flower garden plan calibrated to your specific Alberta location. You answer four questions — where you live, how big your garden beds are, and what you want to grow — and SproutIt produces a colour-coded garden map, a week-by-week planting schedule anchored to your city's historical frost dates, and a live 7-day weather risk advisory. No sign-up, no spreadsheets, no guesswork.
 
 ---
 
@@ -92,7 +92,7 @@ The MVP is anchored in Alberta (Zone 3–4a, with a 100–120 frost-free-day sea
 
 ## How AI-Assisted Development Was Used
 
-GrowIt was built using AI-assisted development tools, with a clear division of labour:
+SproutIt was built using AI-assisted development tools, with a clear division of labour:
 
 - **Replit Agent** was the primary development tool, used to scaffold the monorepo, generate React components and Express routes, run typechecks, fix bugs, and apply iterative polish.
 - **ChatGPT** was used for upstream work: refining product requirements, planning prompt structures, drafting QA checklists, and producing this documentation.
@@ -111,11 +111,11 @@ The project demonstrates that, with disciplined prompting and human review, AI t
 
 ---
 
-## How GrowIt Is Different From a Plain Chatbot
+## How SproutIt Is Different From a Plain Chatbot
 
-A general-purpose chatbot can give useful gardening advice, but the answers are unstructured prose: a paragraph about tomatoes, a list of tips, no plan you can actually use outside. GrowIt turns the same underlying knowledge into a working planning tool by combining:
+A general-purpose chatbot can give useful gardening advice, but the answers are unstructured prose: a paragraph about tomatoes, a list of tips, no plan you can actually use outside. SproutIt turns the same underlying knowledge into a working planning tool by combining:
 
-| Layer | What GrowIt adds over a chatbot |
+| Layer | What SproutIt adds over a chatbot |
 |---|---|
 | Structured questionnaire | Captures region, units, garden areas, sunlight, soil, and plant preferences in a guided 4-step flow — no prompt engineering required |
 | Location-specific frost dates | Six Alberta cities with hardcoded last-spring / first-fall frost dates and climate zones drive every scheduling decision |
@@ -134,7 +134,7 @@ The result is a planning tool, not a conversation. The user gets a plan they can
 
 ## Location-Specific Frost Dates and Plant Rules
 
-Every Alberta city in GrowIt has a hardcoded frost date table (`artifacts/growit-plus/src/data/locations.ts`):
+Every Alberta city in SproutIt has a hardcoded frost date table (`artifacts/growit-plus/src/data/locations.ts`):
 
 | City | Zone | Last Spring Frost | First Fall Frost |
 |---|---|---|---|
@@ -294,7 +294,7 @@ OPENAI_API_KEY=your-openai-api-key-here
 - **Alert preferences are a preview feature** — Step 4 of the questionnaire collects alert preferences (frost warnings, hail alerts, planting reminders, watering days) and a preferred notification time, but no push-notification or email service is wired up yet. The screen is clearly labelled "Coming soon" and the preferences are not persisted between sessions.
 - **Plants Timeline temporarily hidden** — The timeline view on the Plants tab is hidden in this build because the bar-rendering data is incomplete. The plant list, care notes, and schedule view remain fully functional.
 - **Companion conflict warnings are intentionally suppressed** — Companion-planting rules still inform internal plant placement, but per the MVP design no warning badges, conflict notices, or "incompatible neighbour" text are surfaced to the user.
-- **Educational planning support, not professional advice** — GrowIt is designed as a planning aid for home gardeners. It does not replace local horticultural expertise, soil testing, or guidance from a master gardener.
+- **Educational planning support, not professional advice** — SproutIt is designed as a planning aid for home gardeners. It does not replace local horticultural expertise, soil testing, or guidance from a master gardener.
 - **Photo scanner does not diagnose pests or disease** — It only estimates sunlight level and soil/container type. It will not identify plant pests, fungal disease, nutrient deficiency, or any other plant-health issue.
 - **Custom plants may not have verified local growing rules** — Plants added via the custom-entry field do not go through the regional whitelist, so their fit with the selected region, sunlight, and frost window is not validated.
 - **Weather-risk advisory is short-term** — The card surfaces the next 7 days only and should not replace local judgement about long-range conditions.

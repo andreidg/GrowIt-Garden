@@ -22,9 +22,9 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         {/* Logo + wordmark + auth */}
         <header className="flex items-center gap-3 mb-10 relative z-10">
           <div className="w-10 h-10 bg-cream rounded-xl flex items-center justify-center shadow-sm shrink-0">
-            <img src="/logo.svg" alt="GrowIt logo" className="w-7 h-7" />
+            <img src="/logo.svg" alt="SproutIt logo" className="w-7 h-7" />
           </div>
-          <span className="font-serif text-xl font-semibold text-cream tracking-wide flex-1">GrowIt</span>
+          <span className="font-serif text-xl font-semibold text-cream tracking-wide flex-1">SproutIt</span>
 
           {!isLoading && (
             isAuthenticated && user ? (

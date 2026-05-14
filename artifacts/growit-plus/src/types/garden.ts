@@ -1,5 +1,5 @@
 /**
- * GrowIt — Single source of truth for all TypeScript types.
+ * SproutIt — Single source of truth for all TypeScript types.
  */
 
 export type PlantType = "vegetable" | "herb" | "flower" | "foliage";

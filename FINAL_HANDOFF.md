@@ -1,7 +1,7 @@
-# GrowIt — Final Handoff
+# SproutIt — Final Handoff
 
 ## 1. App name
-**GrowIt** — a location-aware, mobile-first garden planning web app for Alberta homeowners.
+**SproutIt** — a location-aware, mobile-first garden planning web app for Alberta homeowners.
 
 ## 2. Deployed app URL
 > _Replace before submission:_ `https://<your-deployment>.replit.app`
@@ -12,7 +12,7 @@ The app is published as a static frontend + Express API on Replit Deployments. T
 > _Replace before submission:_ `https://github.com/<org-or-user>/growit`
 
 ## 4. Product summary
-GrowIt turns four short answers — your Alberta city, your garden dimensions, your light/soil conditions, and what you want to grow — into a complete garden plan: a colour-coded garden map, a frost-anchored week-by-week planting schedule, a curated plant list across vegetables / herbs / flowers / foliage, and a live 7-day weather-risk advisory. It works without an account (plans persist in `localStorage`), and signing in with Replit Auth syncs the active plan to a PostgreSQL-backed account so it follows the user across devices and browsers.
+SproutIt turns four short answers — your Alberta city, your garden dimensions, your light/soil conditions, and what you want to grow — into a complete garden plan: a colour-coded garden map, a frost-anchored week-by-week planting schedule, a curated plant list across vegetables / herbs / flowers / foliage, and a live 7-day weather-risk advisory. It works without an account (plans persist in `localStorage`), and signing in with Replit Auth syncs the active plan to a PostgreSQL-backed account so it follows the user across devices and browsers.
 
 ## 5. Core MVP features
 - **Location-aware setup** — six Alberta cities with hardcoded frost dates and zones; Calgary is the default demo region.
@@ -48,7 +48,7 @@ See [`DEMO_SCRIPT.md`](./DEMO_SCRIPT.md) for the full script. Short version:
 - **Hosting**: Replit Deployments (static frontend + API server) behind Replit's path-based reverse proxy.
 
 ## 8. AI-assisted development summary
-GrowIt was built end-to-end with AI-assisted development:
+SproutIt was built end-to-end with AI-assisted development:
 - **Replit Agent** scaffolded the monorepo, generated React components and Express routes, wrote and ran the deterministic plan generator, fixed bugs, and applied iterative polish.
 - **ChatGPT** was used upstream for product discovery, prompt design, QA checklists, and copy/documentation.
 - The team owned scope, copy, visual design, and what shipped. Each iteration followed a *spec → generate → review → test → revise* loop. AI did **not** write the app independently — every change was reviewed and tested.

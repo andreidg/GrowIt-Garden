@@ -1,14 +1,14 @@
-# GrowIt — 2–3 Minute Demo Script
+# SproutIt — 2–3 Minute Demo Script
 
 **Audience:** ENTI 633 video walkthrough.
-**Goal:** Show that GrowIt turns four short answers into a real, location-specific garden plan — not a chatbot reply.
-**Default demo region:** Calgary. (Mention once that GrowIt is location-aware and not Calgary-only — Edmonton, Red Deer, Airdrie, Cochrane, and Okotoks are all selectable.)
+**Goal:** Show that SproutIt turns four short answers into a real, location-specific garden plan — not a chatbot reply.
+**Default demo region:** Calgary. (Mention once that SproutIt is location-aware and not Calgary-only — Edmonton, Red Deer, Airdrie, Cochrane, and Okotoks are all selectable.)
 
 ---
 
 ## Opening (≈ 15 sec)
 
-> "Beginner gardeners in Alberta lose entire crops because they don't know what to plant, when to plant it, or where to put it. A chatbot can give them a paragraph of tips. **GrowIt** gives them a real plan — a garden map, a week-by-week schedule, and a downloadable PDF — calibrated to their city's frost dates and the actual size of their beds."
+> "Beginner gardeners in Alberta lose entire crops because they don't know what to plant, when to plant it, or where to put it. A chatbot can give them a paragraph of tips. **SproutIt** gives them a real plan — a garden map, a week-by-week schedule, and a downloadable PDF — calibrated to their city's frost dates and the actual size of their beds."
 
 Show the landing page on a phone-width preview while saying this.
 
@@ -19,7 +19,7 @@ Show the landing page on a phone-width preview while saying this.
 **Click:** **Start your plan** → Region step.
 
 **Say:**
-> "Calgary is the default for this demo, but GrowIt is location-aware — six Alberta cities are wired up today, each with its own historical frost dates. Pick a region and the entire schedule re-anchors to your local frost window."
+> "Calgary is the default for this demo, but SproutIt is location-aware — six Alberta cities are wired up today, each with its own historical frost dates. Pick a region and the entire schedule re-anchors to your local frost window."
 
 **Do:** Quickly open the region dropdown to show the other cities, then leave **Calgary** selected → **Next**.
 
@@ -37,7 +37,7 @@ Show the landing page on a phone-width preview while saying this.
 > "I can add multiple garden areas. Each one has its own dimensions, sunlight level, and soil type. The 20 ft / 6.1 m cap matches what most homeowners can actually plant."
 
 **Optional (only if photo is ready):** Tap **Scan my garden photo**, upload a sample image.
-> "I can also upload a photo and GrowIt's scanner estimates sunlight and soil for me with a confidence label. It does not identify pests or plant species — it just speeds up these two fields. If it fails, the photo stays visible and I can keep editing manually."
+> "I can also upload a photo and SproutIt's scanner estimates sunlight and soil for me with a confidence label. It does not identify pests or plant species — it just speeds up these two fields. If it fails, the photo stays visible and I can keep editing manually."
 
 → **Next**.
 
@@ -53,7 +53,7 @@ Show the landing page on a phone-width preview while saying this.
 - Add **Tomato**, **Basil**, **Hostas** (one from each of vegetables, herbs, foliage).
 
 **Say:**
-> "Custom Selection is the source of truth — if I only pick these four plants, GrowIt won't sneak in a generic mixed garden. The search runs across all four categories — vegetables, herbs, flowers, and foliage & ornamental plants — and selections stay even when I clear the search."
+> "Custom Selection is the source of truth — if I only pick these four plants, SproutIt won't sneak in a generic mixed garden. The search runs across all four categories — vegetables, herbs, flowers, and foliage & ornamental plants — and selections stay even when I clear the search."
 
 → **Generate plan**.
 
@@ -89,7 +89,7 @@ Show the landing page on a phone-width preview while saying this.
 
 ## Closing (≈ 15 sec)
 
-> "That's the whole point of GrowIt — a chatbot can describe what tomatoes need. GrowIt gives me a *plan I can take outside*: my beds, my city's frost dates, my plants, on one page, with the schedule that tells me exactly what to do this week. No account required to try it, account sync if I want it."
+> "That's the whole point of SproutIt — a chatbot can describe what tomatoes need. SproutIt gives me a *plan I can take outside*: my beds, my city's frost dates, my plants, on one page, with the schedule that tells me exactly what to do this week. No account required to try it, account sync if I want it."
 
 ---
 
