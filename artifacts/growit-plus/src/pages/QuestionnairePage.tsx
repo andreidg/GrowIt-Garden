@@ -448,22 +448,6 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
               })}
             </div>
 
-            {/* Selected region frost date preview */}
-            {GROWING_REGIONS[region] && (
-              <div className="flex gap-2">
-                <div className="flex-1 bg-forest/7 border border-forest/12 rounded-2xl p-3.5 text-center">
-                  <p className="text-[9px] font-bold text-forest/40 uppercase tracking-wider mb-1">Last Spring Frost</p>
-                  <p className="text-base font-bold text-forest">{GROWING_REGIONS[region]!.lastSpringFrost}</p>
-                  <p className="text-[10px] text-forest/45 mt-0.5">Safe to plant outdoors after</p>
-                </div>
-                <div className="flex-1 bg-terracotta/7 border border-terracotta/15 rounded-2xl p-3.5 text-center">
-                  <p className="text-[9px] font-bold text-terracotta/50 uppercase tracking-wider mb-1">First Fall Frost</p>
-                  <p className="text-base font-bold text-terracotta">{GROWING_REGIONS[region]!.firstFallFrost}</p>
-                  <p className="text-[10px] text-terracotta/45 mt-0.5">Bring tender plants in by</p>
-                </div>
-              </div>
-            )}
-
             {/* Why this matters */}
             <div className="bg-forest/5 rounded-2xl overflow-hidden border border-forest/8">
               <button
