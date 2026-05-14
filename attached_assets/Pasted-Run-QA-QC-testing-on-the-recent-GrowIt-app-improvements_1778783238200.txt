@@ -1,0 +1,225 @@
+Run QA/QC testing on the recent GrowIt app improvements only.
+
+App Testing is now turned back on. Please use it to test the app automatically where possible, and also inspect the relevant code paths.
+
+Important:
+- Do not rebuild the app from scratch.
+- Do not redesign the app.
+- Do not add new major features.
+- Do not change key product functionality.
+- Only fix clear bugs, broken flows, layout issues, inconsistent data handling, or failures caused by the recent improvements.
+
+Recent improvements to QA/QC:
+1. Added “Foliage & Ornamental Plants” category.
+2. Added search box to the Custom Selection plant picker.
+3. Updated Garden Map grid layout to be centered and more compact.
+4. Updated Download Plan button to generate a PDF instead of Markdown.
+5. Fixed Custom Selection so generated plans should use only selected plants.
+6. Removed visible companion planting conflict warnings from the Garden Map.
+7. Restored Step 2 photo scanner preview and analysis UI.
+8. Kept existing app features stable.
+
+Do not add:
+- authentication
+- payments
+- Supabase
+- Mixpanel
+- premium enforcement
+- live chat
+- Gemini video
+- pest diagnosis
+- e-commerce
+- admin dashboard
+- native mobile deployment
+
+QA/QC Checklist:
+
+1. Foliage & Ornamental Plants category
+Check:
+- Category appears anywhere users browse/filter/select plant types.
+- Category appears in Custom Selection.
+- Category appears in custom plant add/edit category dropdowns.
+- Category uses the display name “Foliage & Ornamental Plants.”
+- Category uses the 🌿 icon where category icons are used.
+- Example plants appear, such as Hostas, Ferns, Ornamental grasses, Boxwood, Juniper, Dwarf spruce, Coral bells / Heuchera, Brunnera, Bergenia, and Solomon’s seal.
+- Category does not replace or rename Vegetables, Herbs, or Flowers.
+- Generated garden plans can include foliage/ornamental plants.
+- Garden map, plant table, weekly schedule, download, and share correctly display this category.
+
+Test cases:
+A. Custom Selection → select only Foliage & Ornamental Plants → Generate plan.
+Expected: map/table/schedule show only foliage/ornamental plants.
+B. Custom Selection → select Hostas and Ferns only → Generate plan.
+Expected: only Hostas and Ferns appear, repeated or placed where appropriate.
+C. Custom Selection → select Flowers + Foliage & Ornamental Plants.
+Expected: only selected flowers and selected foliage/ornamental plants appear.
+
+2. Custom Selection search box
+Check:
+- Search box only appears in Custom Selection mode.
+- Search box is hidden in non-custom garden goals.
+- Search box is placed between category tabs and the plant section header.
+- Search input is pill-shaped.
+- Search icon appears on the left.
+- Placeholder reads “Search plants…”
+- Clear ✕ button appears only when text is typed.
+- Clear ✕ button clears the input and restores the full plant list.
+- Search is case-insensitive.
+- Search filters across all categories, regardless of active category tab.
+- Search includes Vegetables, Herbs, Flowers, and Foliage & Ornamental Plants.
+- Existing selections remain selected even if hidden by search.
+- “No plants match your search.” appears when appropriate.
+- “No plants in this category suit your current garden conditions” is hidden while actively searching.
+
+Test cases:
+A. Search “mar” → Marigolds appears.
+B. Search “host” → Hostas appears.
+C. Search “zzzzzz” → “No plants match your search.”
+D. Select a plant, search for another plant, then clear search.
+Expected: original selected plant remains selected.
+E. Switch out of Custom Selection mode.
+Expected: search bar disappears.
+
+3. Custom Selection generation logic
+Check:
+- Custom Selection uses selected plants as the source of truth.
+- It does not generate a generic mixed garden.
+- It does not auto-add vegetables, herbs, flowers, or foliage plants from unselected categories.
+- It does not fill empty map spaces with unselected plants.
+- Empty spaces may remain empty if there are fewer selected plants than grid cells.
+- If selected plants exceed available space, app includes as many as fit and shows a friendly note if needed.
+
+Test cases:
+A. Custom Selection → select only Flowers using Pick My Plants → Generate.
+Expected: only flowers appear.
+B. Custom Selection → manually select only Marigolds → Generate.
+Expected: only Marigolds appear.
+C. Custom Selection → select Basil + Thyme + Marigolds.
+Expected: only those selected plants appear.
+D. Custom Selection → select nothing → Generate.
+Expected: app asks user to select at least one plant or choose a recommended goal.
+E. Vegetable-focused recommendation mode.
+Expected: recommendation logic still works normally.
+
+4. Garden Map layout
+Check:
+- “Your Garden Map” grid is centered horizontally.
+- Grid is not stuck to the left.
+- Grid container wraps tightly around grid content.
+- Gap between plant icons/cells is compact but still tappable.
+- Mobile layout works.
+- Desktop layout works.
+- No page-level horizontal overflow.
+- Plant cell click/tap details still work.
+- Garden map still supports vegetables, herbs, flowers, and foliage/ornamental plants.
+
+5. Companion planting warnings removed
+Check:
+- No “Companion Planting Notice” appears.
+- No warning triangles appear on plant cells.
+- Plant details do not mention incompatible neighbours, conflicts, avoid plants, or bad neighbour warnings.
+- Any companion logic may remain internal only, but nothing conflict-related should be user-facing.
+
+6. PDF Download Plan
+Check:
+- Download Plan now generates a PDF, not Markdown.
+- PDF opens successfully.
+- PDF filename is user-friendly.
+- PDF includes:
+  - GrowIt title/header
+  - selected growing region
+  - unit system
+  - garden area summary
+  - selected plants grouped by category
+  - garden map or useful map summary
+  - plant table/list
+  - weekly schedule
+  - weather-risk notes if available
+  - custom plants if included
+  - generation date
+- PDF visually matches GrowIt branding.
+- PDF has proper margins.
+- Text is readable.
+- Schedule cards or schedule sections do not get awkwardly cut off across pages.
+- Multi-page PDFs render cleanly.
+- If PDF generation fails, app shows:
+  “PDF download is unavailable right now. Please try again.”
+- Share Plan still works and was not broken.
+
+7. Step 2 photo scanner
+Check:
+- Uploaded garden photo appears inside the scanner card/window.
+- Photo preview appears immediately after upload.
+- Preview stays contained and responsive.
+- Analysis/loading state appears.
+- Analysis dropdown/result panel appears.
+- Sunlight field updates after analysis.
+- Soil/container field updates after analysis.
+- Confidence labels appear: High / Medium / Low.
+- Low-confidence values ask the user to confirm or adjust.
+- User can manually edit values after analysis.
+- User can skip photo upload.
+- If analysis fails or API key is missing, uploaded photo still appears and manual entry remains usable.
+- Photo scanner does not estimate garden dimensions, pests, disease, exact plant identification, or property/location.
+
+8. Regression check of core app
+Check that these still work:
+- Landing page
+- Start planning CTA
+- Growing region selector
+- Calgary default demo region
+- Imperial/metric toggle
+- Multiple garden areas
+- Garden dimension cap
+- Sunlight info tooltips
+- Soil/container options
+- Pick My Plants buttons
+- Custom plant entry
+- Plan generation
+- Garden map
+- Plant table
+- Weekly schedule/calendar
+- Weather-risk card
+- Alert toggles
+- Download PDF
+- Share Plan
+- local/browser persistence
+- mobile-first layout
+
+9. Technical checks
+Run available checks:
+- typecheck
+- build
+- lint, if available
+- app tests, if configured
+
+Check:
+- no runtime errors in normal flow
+- no console errors from obvious bugs
+- no API keys or secrets exposed
+- no broken imports
+- no unused code causing build failure
+- no out-of-scope features added
+
+Required QA/QC output:
+Before fixing:
+- Provide a concise checklist with Pass / Fail / Needs review for each major area.
+
+Then:
+- Fix only clear Fail items.
+- Do not change Needs review items unless they are obvious bugs.
+
+After fixing:
+- Run typecheck/build again if available.
+- Provide a final QA/QC checklist confirming:
+  - Foliage & Ornamental Plants works.
+  - Custom Selection search works.
+  - Custom Selection generation respects selected plants.
+  - Garden Map grid is centered and compact.
+  - Companion warnings are not visible.
+  - Download Plan generates PDF.
+  - Photo scanner preview and analysis work.
+  - Core app flows still work.
+  - No key features were changed.
+  - No new major features were added.
+  - App is ready for final review.

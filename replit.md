@@ -29,6 +29,7 @@ Location-aware, mobile-first garden planning web app for Alberta homeowners. Gen
 - `artifacts/growit-plus/src/data/plants.ts` — whitelist of VEGETABLES, HERBS, FLOWERS
 - `artifacts/growit-plus/src/pages/QuestionnairePage.tsx` — 3-step flow (Region, Garden Areas, Plant Selection)
 - `artifacts/growit-plus/src/pages/PlanPage.tsx` — plan display (Map / Schedule / Plants tabs, Download/Share)
+- `artifacts/growit-plus/src/utils/pdf-export.ts` — branded PDF exporter (jsPDF, paginated cards, no clipping)
 - `artifacts/api-server/src/routes/ai-plan.ts` — AI plan generation route
 - `artifacts/api-server/src/routes/analyze-photo.ts` — photo analysis route
 
@@ -50,7 +51,7 @@ Location-aware, mobile-first garden planning web app for Alberta homeowners. Gen
 - Garden map grid per area with companion conflict highlighting
 - Frost-anchored week-by-week schedule
 - Photo analyzer to auto-detect sunlight/soil for primary area
-- Download Plan (Markdown) and Share Plan (Web Share API / clipboard fallback)
+- Download Plan (branded PDF via jsPDF) and Share Plan (Web Share API / clipboard fallback)
 - Weather risk card from live API
 
 ## User preferences
