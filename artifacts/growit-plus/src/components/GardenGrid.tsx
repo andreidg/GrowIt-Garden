@@ -89,8 +89,8 @@ export default function GardenGrid({
   // clamp to 44–56 px so the grid never gets too large or too small.
   // Horizontal scroll kicks in when total grid width > 100%.
   const CELL_PX   = 44;
-  const GAP_PX    = 6;
-  const PADDING_PX = 10;
+  const GAP_PX    = 3;
+  const PADDING_PX = 8;
 
   const selectedCell  = selected ? grid[selected.r][selected.c] : null;
   const selectedPlant = selectedCell?.plant ?? null;
@@ -104,9 +104,9 @@ export default function GardenGrid({
     <div className="flex flex-col gap-4">
 
       {/* ── Grid ── */}
-      <div className="overflow-x-auto hide-scrollbar -mx-1 px-1">
+      <div className="overflow-x-auto hide-scrollbar -mx-1 px-1 flex justify-center">
         <div
-          className="inline-grid rounded-2xl"
+          className="inline-grid rounded-2xl mx-auto w-fit max-w-full"
           style={{
             gridTemplateColumns: `repeat(${cols}, ${CELL_PX}px)`,
             gridTemplateRows:    `repeat(${rows}, ${CELL_PX}px)`,

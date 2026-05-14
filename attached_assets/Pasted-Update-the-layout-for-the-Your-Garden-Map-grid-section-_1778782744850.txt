@@ -1,0 +1,60 @@
+Update the layout for the “Your Garden Map” grid section.
+
+Current issue:
+- The plant grid is aligning too far to the left side of the app.
+- The grid has too much empty spacing between plant icons.
+- The grid container feels wider than the actual grid content.
+
+Do not rebuild the app from scratch. Make this a targeted layout fix only.
+
+Required changes:
+
+1. Center the plant grid
+- Center the plant grid horizontally within its parent container.
+- The grid should feel visually balanced on mobile, tablet, and desktop.
+- If using Tailwind CSS, use layout utilities such as:
+  - mx-auto
+  - w-fit
+  - justify-center
+  - place-content-center
+  - items-center
+- Apply the centering to the actual grid wrapper, not just the outer page section.
+
+2. Make the grid more compact
+- Reduce the gap between plant icons/cells.
+- The grid should still remain readable and tappable.
+- Do not make the cells too small for mobile users.
+- The grid container should wrap tightly around its content instead of stretching unnecessarily across the full width.
+- If using Tailwind CSS, consider:
+  - gap-1 or gap-2 instead of larger gaps
+  - w-fit
+  - max-w-full
+  - mx-auto
+  - overflow-x-auto only if needed on very small screens
+
+3. Preserve responsiveness
+- On mobile, the grid should remain centered and usable.
+- If the grid is wider than the screen, allow horizontal scrolling inside the grid container, but keep the grid itself centered when it fits.
+- Do not cause page-level horizontal overflow.
+
+4. Preserve functionality
+Do not break:
+- plant cell tap/click details
+- garden area separation
+- plant emojis/icons
+- abbreviated plant names
+- category styling for vegetables, herbs, flowers, and foliage/ornamental plants
+- plant table below the map
+- weekly schedule
+- download/share
+- mobile-first layout
+
+5. Final QA
+After implementation, confirm:
+- plant grid is horizontally centered
+- spacing between plant cells is more compact
+- grid wrapper fits tightly around content
+- mobile layout still works
+- no page-level horizontal overflow
+- plant cell interactions still work
+- app runs without errors
