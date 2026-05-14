@@ -82,26 +82,6 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         </div>
       </section>
 
-      {/* ── 2. Feature chips ── */}
-      <section className="bg-cream px-6 py-8 shrink-0">
-        <div className="flex flex-wrap gap-2">
-          {[
-            { icon: "📅", label: "Local Frost Dates" },
-            { icon: "☀️", label: "Sunlight Match" },
-            { icon: "🌿", label: "Companion Planting" },
-            { icon: "📍", label: "Region-Specific" },
-          ].map(({ icon, label }) => (
-            <div
-              key={label}
-              className="bg-forest/5 border border-forest/10 text-forest px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"
-            >
-              <span>{icon}</span>
-              {label}
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── 3. How it works ── */}
       <section className="bg-cream-light px-6 py-8 shrink-0">
         <h2 className="font-serif text-2xl font-semibold text-forest mb-2">How it works</h2>
