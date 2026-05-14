@@ -1,0 +1,106 @@
+Please update the GrowIt app to add a new plant category called “Foliage & Ornamental Plants.”
+
+This category is for outdoor garden plants that are not vegetables, fruits, herbs, or primarily flower-focused plants. These plants are mainly grown for greenery, leaves, shape, texture, groundcover, screening, or year-round garden structure.
+
+Do not remove or rename any existing categories. Add this as a new category only.
+
+Category details:
+- Display name: “Foliage & Ornamental Plants”
+- Category icon/emoji: 🌿
+- Short description:
+  “Plants grown mainly for beautiful leaves, texture, greenery, or structure rather than food or flowers.”
+
+Add this category consistently anywhere the app currently lets users browse, filter, select, add, or display plant types/categories, including:
+- category filters
+- plant add/edit forms
+- plant browsing or selection pages
+- onboarding / garden planning screens
+- Pick My Plants recommendation areas
+- custom plant category dropdowns
+- garden map category styling
+- plant table
+- weekly schedule
+- download/share summary
+- any sample plant data
+
+Include these example plants in the category:
+- Ferns
+- Hostas
+- Ornamental grasses
+- Sedges
+- Boxwood
+- Juniper
+- Yew
+- Cedar
+- Dwarf spruce
+- Ivy
+- Virginia creeper
+- Ajuga
+- Pachysandra
+- Sweet woodruff
+- Lamb’s ear
+- Coral bells / Heuchera
+- Brunnera
+- Bergenia
+- Solomon’s seal
+
+Functional requirements:
+1. Users should be able to select “Foliage & Ornamental Plants” as a category in the plant selection flow.
+2. Users should be able to manually select individual foliage/ornamental plants.
+3. If there is a “Pick My Plants” button by category, add one for this new category.
+4. In Custom selection mode, if the user selects only foliage/ornamental plants, the generated garden should show only foliage/ornamental plants.
+5. Do not auto-add vegetables, herbs, flowers, or other categories when the user selected only foliage/ornamental plants.
+6. In non-custom recommendation modes, foliage/ornamental plants may be recommended where they fit the garden goal and conditions.
+7. Garden map cells should visually distinguish this category from vegetables, herbs, and flowers.
+8. Plant detail panels should describe these plants as structure, greenery, groundcover, texture, shade-tolerant planting, or ornamental support plants.
+9. Weekly schedule should not treat foliage/ornamental plants as edible crops. Use actions like:
+   - plant outdoors
+   - transplant
+   - mulch
+   - water while establishing
+   - prune/shape
+   - winter protection
+   - maintenance
+10. Download/share summaries should include this category correctly.
+
+Suggested display treatment:
+- Category colour: soft green or blue-green distinct from the vegetable green
+- Icon: 🌿
+- Label: Foliage & Ornamental
+
+Important:
+- Do not break existing vegetable, herb, or flower functionality.
+- Do not change app branding.
+- Do not add authentication, payments, Supabase, Mixpanel, premium enforcement, live chat, pest diagnosis, e-commerce, or admin dashboard.
+- Do not rebuild the app from scratch.
+- Make this a targeted category/data/model/UI update.
+
+Final QA cases to confirm:
+Case A:
+- Custom selection
+- Select only Foliage & Ornamental Plants
+- Generate plan
+Expected: garden map, plant table, and schedule show only selected foliage/ornamental plants.
+
+Case B:
+- Custom selection
+- Select Hostas and Ferns only
+- Generate plan
+Expected: only Hostas and Ferns appear, repeated or placed where appropriate.
+
+Case C:
+- Custom selection
+- Select Flowers + Foliage & Ornamental Plants
+- Generate plan
+Expected: only selected flowers and selected foliage/ornamental plants appear.
+
+Case D:
+- Beginner-friendly or Pollinator-friendly recommendation mode
+Expected: existing recommendation logic still works and may include foliage/ornamental plants only where appropriate.
+
+After implementation, provide:
+- files/functions changed
+- confirmation the new category appears across the app
+- confirmation Custom selection respects this category
+- confirmation existing categories still work
+- pass/fail results for the QA cases above

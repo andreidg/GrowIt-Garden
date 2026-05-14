@@ -42,6 +42,18 @@ const ACTION_CFG: Record<ActionType, ActionCfg> = {
     cell:  "bg-[#E0F0E8] border-[#80C0A0] text-[#1A5035]",
     badge: "bg-[#E0F0E8] text-[#1A5035]",
   },
+  plant_outdoors: {
+    label: "Plant Outdoors",
+    icon:  Leaf,
+    cell:  "bg-[#DCE9E0] border-[#88B098] text-[#2C5848]",
+    badge: "bg-[#DCE9E0] text-[#2C5848]",
+  },
+  winter_protect: {
+    label: "Winter Protection",
+    icon:  Droplets,
+    cell:  "bg-frost/15 border-frost/35 text-[#3A6B80]",
+    badge: "bg-frost/15 text-[#3A6B80]",
+  },
   maintenance: {
     label: "Garden Care",
     icon:  Wrench,

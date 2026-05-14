@@ -2,16 +2,18 @@
  * GrowIt — Single source of truth for all TypeScript types.
  */
 
-export type PlantType = "vegetable" | "herb" | "flower";
+export type PlantType = "vegetable" | "herb" | "flower" | "foliage";
 
 export type ActionType =
   | "start_indoors"
   | "buy_transplant"
   | "direct_sow"
   | "transplant"
+  | "plant_outdoors"
   | "maintenance"
   | "bloom_watch"
-  | "harvest_soon";
+  | "harvest_soon"
+  | "winter_protect";
 
 export type SunlightLevel =
   | "Full Sun"

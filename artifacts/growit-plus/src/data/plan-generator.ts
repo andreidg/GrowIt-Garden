@@ -829,6 +829,36 @@ function buildSchedule(
       }
     }
 
+    if (plant.type === "foliage") {
+      const plantDate = addDays(lastFrost, 7);
+      push(plantDate, {
+        plant,
+        actionType: "plant_outdoors",
+        description: `Plant ${plant.name} outdoors from a nursery start`,
+        timingNote: `1 week after your last spring frost (${region.lastSpringFrost}) — once soil has warmed and risk of hard frost has passed`,
+      });
+
+      const establishDate = addDays(plantDate, 14);
+      if (establishDate <= firstFallFrost) {
+        push(establishDate, {
+          plant,
+          actionType: "maintenance",
+          description: `Water ${plant.name} deeply while it establishes`,
+          timingNote: "First few weeks after planting — keep soil consistently moist (but not waterlogged) so roots can develop",
+        });
+      }
+
+      const winterPrepDate = addDays(firstFallFrost, -14);
+      if (winterPrepDate >= today) {
+        push(winterPrepDate, {
+          plant,
+          actionType: "winter_protect",
+          description: `Mulch around ${plant.name} for winter protection`,
+          timingNote: `2 weeks before your first fall frost (${region.firstFallFrost}) — apply 5–10 cm of mulch to insulate roots through Alberta winters`,
+        });
+      }
+    }
+
     if (plant.directSow) {
       const sowDate = addDays(lastFrost, -plant.weeksBeforeFrost * 7);
       push(sowDate, {

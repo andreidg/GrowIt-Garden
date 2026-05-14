@@ -38,13 +38,24 @@ const CAT = {
     label:  "Flower",
     icon:   "🌸",
   },
+  foliage: {
+    cell:   "bg-[#DCE9E0] border-[#88B098]",
+    header: "bg-[#DCE9E0]",
+    badge:  "bg-[#2C5848] text-[#F5F0E8]",
+    dot:    "bg-[#5A8C75]",
+    pill:   "bg-[#DCE9E0] border-[#88B098] text-[#2C5848]",
+    label:  "Foliage",
+    icon:   "🌿",
+  },
 } as const;
 
 const ACTION_LABELS: Record<string, string> = {
-  start_indoors: "Start Indoors",
-  direct_sow:    "Direct Sow",
-  transplant:    "Transplant",
-  harvest_soon:  "Harvest Soon",
+  start_indoors:   "Start Indoors",
+  direct_sow:      "Direct Sow",
+  transplant:      "Transplant",
+  plant_outdoors:  "Plant Outdoors",
+  harvest_soon:    "Harvest Soon",
+  winter_protect:  "Winter Protect",
 };
 
 // Show up to 5 chars of name (+ ellipsis if truncated) so cells stay readable

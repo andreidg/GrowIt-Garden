@@ -27,6 +27,11 @@ const TYPE_CFG: Record<string, { pill: string; icon: string; label: string }> = 
     icon:  "🌸",
     label: "Flower",
   },
+  foliage: {
+    pill:  "bg-[#DCE9E0] border border-[#88B098] text-[#2C5848]",
+    icon:  "🌿",
+    label: "Foliage",
+  },
 };
 
 export default function PlantLegend({ plants }: PlantLegendProps) {

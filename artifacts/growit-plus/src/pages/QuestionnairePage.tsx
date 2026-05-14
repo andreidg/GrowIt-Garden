@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { REGION_KEYS, GROWING_REGIONS } from "@/data/locations";
-import { VEGETABLES, HERBS, FLOWERS, type PlantItem } from "@/data/plants";
+import { VEGETABLES, HERBS, FLOWERS, FOLIAGE, type PlantItem } from "@/data/plants";
 import type { GardenProfile, SunlightLevel, SoilType, UnitSystem, GardenArea, CustomPlant, PlantType } from "@/types/garden";
 import { UNIT_CONFIG, capToMax, toInternalFt } from "@/utils/units";
 import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X } from "lucide-react";
@@ -93,7 +93,7 @@ function computeGoalPreview(goal: string, sunlight: SunlightLevel, soilType: Soi
 const TOTAL_STEPS = 4;
 const PRIMARY_ID   = "area-primary";
 
-type PlantFilter = "all" | "vegetables" | "herbs" | "flowers";
+type PlantFilter = "all" | "vegetables" | "herbs" | "flowers" | "foliage";
 
 // ---------------------------------------------------------------------------
 // Plant-section sub-component
@@ -759,7 +759,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                       These will be added on top of GrowIt's recommendations. Plants that don't suit your conditions will be noted in your plan.
                     </p>
                     <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
-                      {(["all", "vegetables", "herbs", "flowers"] as PlantFilter[]).map(f => (
+                      {(["all", "vegetables", "herbs", "flowers", "foliage"] as PlantFilter[]).map(f => (
                         <button key={f} onClick={() => setPlantFilter(f)}
                           className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
                             plantFilter === f ? "bg-white text-forest shadow-sm" : "text-forest/50 hover:text-forest/70"
@@ -789,6 +789,13 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                         onRecommend={() => recommendForCategory(FLOWERS, "flowers")}
                         recommendNote={recommendNotes["flowers"]} />
                     )}
+                    {(plantFilter === "all" || plantFilter === "foliage") && (
+                      <PlantSection title="Foliage & Ornamental" emoji="🌿" plants={FOLIAGE}
+                        selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                        onToggleAll={makeToggleAll(FOLIAGE.map(p => p.id))}
+                        onRecommend={() => recommendForCategory(FOLIAGE, "foliage")}
+                        recommendNote={recommendNotes["foliage"]} />
+                    )}
                     {selectedPlantIds.length > 0 && (
                       <p className="text-xs text-forest/50">
                         {selectedPlantIds.length} plant{selectedPlantIds.length !== 1 ? "s" : ""} added to recommendations.
@@ -803,7 +810,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
             {gardenGoal === "custom" && (
               <div className="flex flex-col gap-4">
                 <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
-                  {(["all", "vegetables", "herbs", "flowers"] as PlantFilter[]).map(f => (
+                  {(["all", "vegetables", "herbs", "flowers", "foliage"] as PlantFilter[]).map(f => (
                     <button key={f} onClick={() => setPlantFilter(f)}
                       className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
                         plantFilter === f ? "bg-white text-forest shadow-sm" : "text-forest/50 hover:text-forest/70"
@@ -832,6 +839,13 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                     onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
                     onRecommend={() => recommendForCategory(FLOWERS, "flowers")}
                     recommendNote={recommendNotes["flowers"]} />
+                )}
+                {(plantFilter === "all" || plantFilter === "foliage") && (
+                  <PlantSection title="Foliage & Ornamental" emoji="🌿" plants={FOLIAGE}
+                    selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                    onToggleAll={makeToggleAll(FOLIAGE.map(p => p.id))}
+                    onRecommend={() => recommendForCategory(FOLIAGE, "foliage")}
+                    recommendNote={recommendNotes["foliage"]} />
                 )}
                 {plantError && totalSelected === 0 && (
                   <div className="bg-terracotta/10 border border-terracotta/25 rounded-xl px-4 py-3">
@@ -862,6 +876,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                     <option value="vegetable">Vegetable</option>
                     <option value="herb">Herb</option>
                     <option value="flower">Flower</option>
+                    <option value="foliage">Foliage & Ornamental</option>
                     <option value="other">Other</option>
                   </select>
                   <input placeholder="Notes (optional)..." value={customNotes}
