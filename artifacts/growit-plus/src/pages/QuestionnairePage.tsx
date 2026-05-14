@@ -622,8 +622,13 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                       })}
                     </div>
                     {areaConfs[area.id]?.sunlight && (
-                      <div className="mt-2">
+                      <div className="mt-2 space-y-1">
                         <ConfidenceBadge confidence={areaConfs[area.id]!.sunlight!} />
+                        {areaConfs[area.id]!.sunlight === "low" && (
+                          <p className="text-[11px] text-terracotta/80 leading-snug">
+                            Please confirm or adjust this value before continuing.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -650,8 +655,13 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                       })}
                     </div>
                     {areaConfs[area.id]?.soil && (
-                      <div className="mt-2">
+                      <div className="mt-2 space-y-1">
                         <ConfidenceBadge confidence={areaConfs[area.id]!.soil!} />
+                        {areaConfs[area.id]!.soil === "low" && (
+                          <p className="text-[11px] text-terracotta/80 leading-snug">
+                            Please confirm or adjust this value before continuing.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

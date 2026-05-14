@@ -54,15 +54,20 @@ router.post("/analyze-photo", async (req, res) => {
 
   const userPrompt =
     "Look at this garden photo and estimate:\n" +
-    "1. sunlight: one of exactly [\"Full Sun\", \"Partial Shade\", \"Full Shade\"]\n" +
+    "1. sunlight: one of EXACTLY these five values:\n" +
+    "   - \"Full Sun\"      = 6+ hours of direct sunlight per day (open sky, strong shadows)\n" +
+    "   - \"Part Sun\"      = 4–6 hours of direct sunlight per day\n" +
+    "   - \"Part Shade\"    = 2–4 hours of direct sunlight per day, or filtered light most of the day\n" +
+    "   - \"Dappled Shade\" = filtered light through trees, fences, pergolas, or structures\n" +
+    "   - \"Full Shade\"    = less than 2 hours of direct sunlight per day, but still bright outdoor indirect light\n" +
     "2. sunlightConfidence: one of [\"high\", \"medium\", \"low\"]\n" +
-    "   - high = clear evidence (deep shadows, bright open sky, etc.)\n" +
+    "   - high = clear evidence (deep shadows, bright open sky, dense canopy, etc.)\n" +
     "   - medium = reasonable inference\n" +
     "   - low = difficult to tell from this image\n" +
-    "3. soilType: one of exactly [\"Raised Bed\", \"In-Ground Clay\", \"In-Ground Loam\", \"Container/Pots\"]\n" +
+    "3. soilType: one of EXACTLY [\"Raised Bed\", \"In-Ground Clay\", \"In-Ground Loam\", \"Container/Pots\"]\n" +
     "4. soilTypeConfidence: one of [\"high\", \"medium\", \"low\"]\n" +
     "5. conditionNotes: array of 1–3 short strings describing observable garden conditions " +
-    "   (drainage, sun exposure, surrounding structures, bed type — NOT pests, NOT dimensions)\n\n" +
+    "   (drainage, sun exposure, surrounding structures, bed type — NOT pests, NOT dimensions, NOT plant identification)\n\n" +
     "Return exactly: { \"sunlight\": \"...\", \"sunlightConfidence\": \"...\", " +
     "\"soilType\": \"...\", \"soilTypeConfidence\": \"...\", \"conditionNotes\": [...] }";
 
@@ -95,11 +100,14 @@ router.post("/analyze-photo", async (req, res) => {
     }
 
     // ── Validate + sanitise fields ────────────────────────────────────────
-    const SUNLIGHT_VALS = ["Full Sun", "Partial Shade", "Full Shade"] as const;
+    const SUNLIGHT_VALS = ["Full Sun", "Part Sun", "Part Shade", "Dappled Shade", "Full Shade"] as const;
     const SOIL_VALS     = ["Raised Bed", "In-Ground Clay", "In-Ground Loam", "Container/Pots"] as const;
     const CONF_VALS     = ["high", "medium", "low"] as const;
 
-    const sunlight           = SUNLIGHT_VALS.find(v => v === parsed["sunlight"])           ?? "Partial Shade";
+    // Backward-compat alias: older models occasionally return the legacy "Partial Shade"
+    const rawSunlight = parsed["sunlight"] === "Partial Shade" ? "Part Shade" : parsed["sunlight"];
+
+    const sunlight           = SUNLIGHT_VALS.find(v => v === rawSunlight)                   ?? "Part Shade";
     const sunlightConfidence = CONF_VALS.find(v => v === parsed["sunlightConfidence"])      ?? "low";
     const soilType           = SOIL_VALS.find(v => v === parsed["soilType"])                ?? "In-Ground Loam";
     const soilTypeConfidence = CONF_VALS.find(v => v === parsed["soilTypeConfidence"])      ?? "low";

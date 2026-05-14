@@ -1,0 +1,102 @@
+Fix the Step 2 “My Garden photo scanner” feature.
+
+Current issue:
+- When I upload an image, the app no longer updates the sunlight and soil setup fields.
+- This used to work.
+- I also liked the previous high / medium / low confidence indicators for each AI-estimated field.
+- Please restore that behaviour.
+
+Do not rebuild the app from scratch. Fix only the photo scanner workflow and related UI.
+
+Required behaviour:
+
+1. Image upload feedback
+- When the user uploads a photo, show clearly that the image was uploaded.
+- Display the uploaded image preview or filename.
+- Show an analysis/loading state such as:
+  “Analyzing your garden photo...”
+- When analysis is complete, show a clear result summary.
+
+2. Restore sunlight and soil pre-fill
+- The photo scanner should update the Step 2 setup fields:
+  - sunlight level
+  - soil/container type, if detectable
+- The updated values should appear directly in the existing form fields.
+- The user must still be able to manually edit the values after the scanner fills them in.
+- Do not overwrite manual user changes unless the user uploads a new photo and confirms or intentionally accepts the scanner result.
+
+3. Restore confidence indicators
+- For each AI-estimated field, show confidence:
+  - High
+  - Medium
+  - Low
+- Show confidence beside or below the field that was updated.
+- Example:
+  - Sunlight: Part sun — Medium confidence
+  - Soil type: Raised bed — High confidence
+- If confidence is low, show a small note:
+  “Please confirm or adjust this value before continuing.”
+
+4. Supported analysis fields
+The photo scanner should only estimate:
+- sunlight level
+- soil/container type
+- optional general garden condition notes
+
+Do not estimate:
+- garden dimensions
+- pests
+- plant disease
+- exact plant identification
+- property/location
+
+5. Sunlight options must match the app’s current sunlight levels
+Map the AI/photo analysis result to one of these exact options:
+- Full sun
+- Part sun
+- Part shade
+- Full shade
+- Dappled shade
+
+Use these meanings:
+- Full sun: 6+ hours of direct sunlight per day
+- Part sun: 4–6 hours of direct sunlight per day
+- Part shade: 2–4 hours of direct sunlight per day, or filtered light for much of the day
+- Full shade: less than 2 hours of direct sunlight per day, but still bright indirect outdoor light
+- Dappled shade: filtered light through trees, fences, pergolas, or structures
+
+6. Soil/container options must match the app’s current soil options
+Map the AI/photo analysis result to one of these exact options:
+- Raised Bed
+- In-Ground Clay
+- In-Ground Loam
+- Container/Pots
+
+7. Failure handling
+If photo analysis fails:
+- Do not block the user.
+- Show a friendly message:
+  “Photo analysis is unavailable right now. You can still enter your garden details manually.”
+- Keep the manual form usable.
+- Do not clear existing user inputs.
+
+8. Backend/API handling
+- If the app uses an AI vision API, make sure the API key is read only from Replit Secrets/environment variables.
+- Never expose API keys in frontend code.
+- If no API key is available, either:
+  A) show the friendly unavailable message, or
+  B) use a simple local/mock analysis for demo purposes.
+- Do not let a missing API key silently fail.
+
+9. Final check
+After fixing, confirm:
+- Uploading an image visibly works.
+- The image preview or filename appears.
+- Analysis/loading state appears.
+- Sunlight field updates after analysis.
+- Soil/container field updates after analysis.
+- Confidence labels appear for sunlight and soil.
+- Low-confidence values ask the user to confirm or adjust.
+- Manual edits still work after analysis.
+- The user can continue without uploading a photo.
+- App still runs without errors.
