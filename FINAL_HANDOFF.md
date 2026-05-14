@@ -4,7 +4,7 @@
 **SproutIt** — a location-aware, mobile-first garden planning web app for Alberta homeowners.
 
 ## 2. Deployed app URL
-> _Replace before submission:_ `https://<your-deployment>.replit.app`
+https://sproutit.replit.app/
 
 The app is published as a static frontend + Express API on Replit Deployments. The deployment URL is also exposed via `$REPLIT_DOMAINS` at runtime.
 
