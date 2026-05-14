@@ -5,7 +5,7 @@ import GardenGrid from "@/components/GardenGrid";
 import WeeklySchedule from "@/components/WeeklySchedule";
 import PlantLegend from "@/components/PlantLegend";
 import BottomNav, { type PlanTab } from "@/components/BottomNav";
-import { Download, Share2, RotateCcw, AlertTriangle, MapPin, Calendar, Info, Sparkles, Cpu, Wand2, Pencil, X, Search, RefreshCw } from "lucide-react";
+import { Download, Share2, RotateCcw, MapPin, Calendar, Info, Sparkles, Cpu, Wand2, Pencil, X, Search, RefreshCw } from "lucide-react";
 import WeatherRiskCard from "@/components/WeatherRiskCard";
 import WeatherStrip from "@/components/WeatherStrip";
 import PlantTimeline from "@/components/PlantTimeline";
@@ -31,7 +31,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
   const [editSearch, setEditSearch]       = useState("");
   const [editSaving, setEditSaving]       = useState(false);
 
-  const { profile, region, conflicts, selectedPlants, grid, schedule,
+  const { profile, region, selectedPlants, grid, schedule,
           timingExplanation, companionNotes, cautionNotes } = localPlan;
 
   const { data: weatherData, loading: weatherLoading, error: weatherError } =
@@ -47,7 +47,6 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
     ? `${localPlan.areaPlans.length} areas`
     : `${fmt(profile.lengthFt)} × ${fmt(profile.widthFt)}`;
 
-  const hasConflicts  = conflicts.length > 0;
   const flowerCount   = selectedPlants.filter(p => p.type === "flower").length;
   const highRiskCount = selectedPlants.filter(p => p.riskLevel === "high").length;
 
@@ -267,18 +266,6 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
             data={weatherData}
           />
 
-          {/* Companion conflicts */}
-          {hasConflicts && (
-            <div className="bg-terracotta/10 border border-terracotta/20 p-4 rounded-2xl flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-terracotta shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-terracotta text-sm mb-1">Companion Planting Notice</h4>
-                <p className="text-xs text-terracotta/80 leading-relaxed">
-                  Adjacent plants with conflicts: {conflicts.join(", ")}. Cells marked ⚠️ are next to an incompatible neighbour.
-                </p>
-              </div>
-            </div>
-          )}
 
 
           {/* Garden map(s) */}

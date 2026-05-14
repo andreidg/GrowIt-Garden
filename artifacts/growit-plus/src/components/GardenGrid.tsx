@@ -139,18 +139,8 @@ export default function GardenGrid({
                         {cellLabel(plant.name)}
                       </span>
 
-                      {/* Companion conflict badge */}
-                      {cell.hasConflict && (
-                        <div
-                          className="absolute -top-1.5 -right-1.5 bg-white border border-terracotta/40 rounded-full shadow text-[8px] w-[18px] h-[18px] flex items-center justify-center z-10"
-                          title="Companion conflict with adjacent plant"
-                        >
-                          ⚠️
-                        </div>
-                      )}
-
                       {/* High-risk indicator (e.g. lavender) */}
-                      {plant.riskLevel === "high" && !cell.hasConflict && (
+                      {plant.riskLevel === "high" && (
                         <div
                           className="absolute -top-1.5 -right-1.5 bg-amber-100 border border-amber-400 rounded-full shadow text-[9px] font-bold w-[18px] h-[18px] flex items-center justify-center text-amber-700 z-10"
                           title="High-risk plant — see notes"
@@ -243,11 +233,6 @@ function DetailPanel({
             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${cat.badge}`}>
               {cat.label}
             </span>
-            {cell.hasConflict && (
-              <span className="text-[10px] font-semibold text-terracotta bg-terracotta/10 px-2 py-0.5 rounded-full">
-                ⚠️ Companion conflict
-              </span>
-            )}
             {plant.riskLevel === "high" && (
               <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
                 ⚠ High-risk plant
@@ -313,17 +298,6 @@ function DetailPanel({
           </div>
         )}
 
-        {/* Conflict explanation */}
-        {cell.hasConflict && (
-          <div className="col-span-2 bg-terracotta/8 border border-terracotta/20 rounded-xl p-3">
-            <p className="text-[10px] font-semibold text-terracotta uppercase tracking-wider mb-1">
-              Companion Warning
-            </p>
-            <p className="text-xs text-terracotta/80 leading-relaxed">
-              {plant.name} is adjacent to an incompatible companion plant. Space them apart or add a neutral plant between them.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

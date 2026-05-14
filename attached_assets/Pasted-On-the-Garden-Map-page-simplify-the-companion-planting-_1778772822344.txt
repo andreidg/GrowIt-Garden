@@ -1,0 +1,61 @@
+On the Garden Map page, simplify the companion planting logic and remove all visible incompatibility warnings.
+
+Current issue:
+- The Garden Map page shows a “Companion Planting Notice.”
+- It says things like “Adjacent plants with conflicts: Kale, Tomatoes.”
+- Individual plant cells also show warning icons.
+- We want to simplify the app and remove this warning experience entirely.
+
+Required changes:
+
+1. Remove the Companion Planting Notice
+- Completely remove the “Companion Planting Notice” card/banner from the Garden Map page.
+- Do not show any text about incompatible neighbours, companion conflicts, adjacent plant conflicts, or suboptimal neighbours.
+
+2. Remove warning icons from garden cells
+- Remove the warning triangle icons from all plant cells.
+- Plant cells should only show:
+  - plant emoji/icon
+  - abbreviated plant name
+  - category styling
+- Do not display warning badges, caution icons, or conflict indicators on the map.
+
+3. Remove companion conflict messaging from tooltips/details
+- If plant detail panels or tooltips mention incompatible neighbours, remove that text.
+- Keep useful positive information such as:
+  - plant name
+  - category
+  - garden area
+  - spacing
+  - sunlight needs
+  - care notes
+  - schedule/action type
+- Do not mention “conflict,” “incompatible,” “avoid,” or “bad neighbour” in the user-facing Garden Map experience.
+
+4. Keep companion logic only if needed internally
+- If companion planting rules are used internally for better placement, that is fine.
+- But do not expose warnings or incompatibility messages to the user.
+- If it is easier, disable companion conflict validation entirely for the MVP.
+
+5. Do not break existing app features
+Keep working:
+- garden map layout
+- plant table
+- plant cell tap/click details
+- weekly calendar/schedule
+- weather-risk card
+- plant recommendations
+- custom plants
+- multiple garden areas
+- imperial/metric units
+- mobile-first layout
+- download/share buttons
+
+6. Final check
+After making the changes, confirm:
+- The “Companion Planting Notice” no longer appears.
+- Warning icons no longer appear on plant cells.
+- Plant details do not mention incompatible neighbours.
+- Garden map still renders correctly.
+- Weekly calendar still works.
+- App still runs without errors.
