@@ -283,7 +283,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
                     </span>
                   </div>
                   {ap.selectedPlants.length > 0 ? (
-                    <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 flex justify-center">
                       <GardenGrid
                         grid={getGrid(ap.area.id, ap.grid)}
                         lengthFt={ap.area.lengthFt}
@@ -301,10 +301,10 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
             </div>
           ) : (
             <div>
-              <h2 className="font-serif text-xl font-semibold text-forest mb-4">
+              <h2 className="font-serif text-xl font-semibold text-forest mb-4 text-center">
                 Your Garden Map
               </h2>
-              <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 flex justify-center">
                 <GardenGrid
                   grid={getGrid("primary", grid)}
                   lengthFt={profile.lengthFt}
