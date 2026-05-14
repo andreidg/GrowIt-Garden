@@ -940,11 +940,16 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
               <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
                 Step 4 of 4
               </p>
-              <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
-                Set your alerts
-              </h2>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="font-serif text-2xl font-semibold text-forest">
+                  Set your alerts
+                </h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gold/20 text-forest border border-gold/30">
+                  Coming soon
+                </span>
+              </div>
               <p className="text-sm text-forest/60 leading-relaxed">
-                We'll only notify you when it matters.
+                Preview your alert preferences — push notifications will be available in the next release.
               </p>
             </div>
 

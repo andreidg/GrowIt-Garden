@@ -151,7 +151,7 @@ Users select their preferred unit system (Imperial or Metric) at the top of Step
 - The dimension inputs re-compute when the unit toggle changes; the stored ft values are the source of truth
 - Plant spacing in the garden-map detail panel is converted at render time via `formatSpacing(spacingFt, unit)`, which outputs inches, feet, centimetres, or metres as appropriate
 - The downloaded Markdown plan uses the user's preferred unit for all displayed dimensions
-- A maximum dimension cap (20 ft / 6 m per side) is enforced in the input handler and shown as a user-facing warning
+- A maximum dimension cap (20 ft / 6.1 m per side) is enforced in the input handler and shown as a user-facing warning
 
 ---
 
@@ -246,7 +246,7 @@ OPENAI_API_KEY=sk-...
 - **AI plan generation requires a valid API key** — Without `OPENAI_API_KEY`, the app falls back to the deterministic generator. The fallback is fully functional but does not include AI-written growing notes.
 - **No cross-device sync** — Plans are saved to `localStorage` and are lost if the browser cache is cleared or a different device is used (unless the user downloads the Markdown file).
 - **Photo analyser accuracy** — The AI light/soil detection from a garden photo is best-effort and may misread unusual conditions (deep shade, overexposed photos, snow cover). Always verify the pre-filled values.
-- **Plant database scope** — The database includes approximately 40 plants common to Alberta gardens. Unusual or specialty varieties are not included; use the custom-plant entry for these.
+- **Plant database scope** — The database includes 34 plants (15 vegetables, 9 herbs, 10 flowers) common to Alberta gardens. Unusual or specialty varieties are not included; use the custom-plant entry for these.
 - **No real-time soil data** — Soil type is self-reported. The app does not connect to soil databases or mapping services.
 
 ---
