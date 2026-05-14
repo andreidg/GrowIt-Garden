@@ -1,0 +1,220 @@
+Add authenticated user plan saving and loading so user accounts are connected to generated garden plans.
+
+Current issue:
+- User accounts and generated garden plans are disconnected.
+- When a user logs in, the app starts fresh instead of loading their previously generated plan.
+- If a guest creates a plan before signing in, that plan does not automatically attach to the user account after login.
+
+Goal:
+- Whenever an authenticated user creates or updates a garden plan, save that plan to the database and link it to that user.
+- When the user logs in, automatically fetch and load their saved garden plan.
+- If a guest creates a plan first and then logs in, save that local guest plan to the user’s account after login.
+
+Do not rebuild the app from scratch. This is a targeted backend + persistence integration fix.
+
+Important:
+- Preserve the current no-account-required guest flow.
+- Do not remove localStorage/sessionStorage fallback.
+- Do not change the UI design unless a small loading/error state is required.
+- Do not add payments, premium gating, Mixpanel, live chat, pest diagnosis, e-commerce, or admin dashboard.
+
+1. Inspect current auth and database setup
+
+First, inspect the current codebase and identify:
+- how authentication is currently implemented
+- how user identity is represented
+- whether Replit Auth / OpenID Connect is active
+- existing database schema/tables
+- existing plan/garden data types
+- current localStorage/sessionStorage keys
+- current plan generation output structure
+- current API routes for plan creation/update/fetching, if any
+
+Before coding, summarize the current persistence flow and the specific gap causing user plans not to load after login.
+
+2. Database persistence requirements
+
+Add or update backend/database logic so each saved plan is linked to the authenticated user.
+
+The database should store:
+- authenticated user ID
+- garden plan ID
+- garden profile / inputs
+- garden areas
+- selected plants
+- custom plants
+- generated garden map
+- weekly schedule
+- weather-risk notes if stored
+- unit preference
+- selected growing region
+- created timestamp
+- updated timestamp
+
+If a suitable table already exists, use it.
+If not, create or update the schema in the project’s existing database style.
+
+Do not introduce a completely new database system if one already exists.
+
+3. Save plan when authenticated
+
+When an authenticated user:
+- generates a plan
+- updates a plan
+- edits selected plants
+- regenerates the map or schedule
+- updates garden areas
+
+The app should save the latest plan to the database and link it to the authenticated user.
+
+If the app only supports one saved plan per user for now, that is acceptable.
+Use upsert logic if appropriate:
+- if user has an existing saved plan, update it
+- if user has no saved plan, create one
+
+4. Load plan on login
+
+When a user logs in:
+- fetch the saved garden plan for that authenticated user
+- if a saved plan exists, load it automatically into the app state
+- the user should return to the relevant plan/dashboard screen instead of starting from scratch
+- if no saved plan exists, allow normal new-plan creation
+
+Add a small loading state if needed:
+“Loading your saved garden plan...”
+
+Add a friendly empty state if needed:
+“No saved garden plan yet. Start by creating one.”
+
+5. Guest-to-account transition
+
+If a guest creates a garden plan before signing in:
+- keep the guest plan in localStorage/sessionStorage as currently implemented
+- when the user logs in, detect whether a local guest plan exists
+- save that local guest plan to the authenticated user’s database record
+- then load that saved plan from the database as the user’s active plan
+
+Conflict handling:
+- If the user already has a saved database plan and also has a local guest plan, do not silently overwrite.
+- Show a simple choice:
+  - “Keep saved account plan”
+  - “Replace with this local plan”
+- If implementing the modal is too large, use a conservative default:
+  - keep the account plan
+  - show a message that the local plan was not saved because an account plan already exists
+But preferred behaviour is to ask the user.
+
+6. Offline / failure fallback
+
+If database save or fetch fails:
+- do not crash the app
+- keep the current local plan available
+- show a friendly message:
+  “We could not sync your plan right now. Your plan is still saved on this device.”
+- preserve localStorage/sessionStorage fallback
+
+If the user is not authenticated:
+- continue using local/browser storage only
+- do not require login to generate or view a plan
+
+7. Security requirements
+
+- Users must only be able to access their own saved garden plan.
+- Do not expose another user’s plan.
+- Do not trust a user ID sent from the frontend if server-side authenticated identity is available.
+- Use the authenticated session/user identity from the backend.
+- Do not expose database credentials or secrets in frontend code.
+- Do not commit secrets to GitHub.
+
+8. UI behaviour
+
+Minimal UI changes only:
+- If logged in and plan loads successfully, show the saved plan.
+- If syncing is happening, show a subtle loading/saving indicator if practical.
+- If sync fails, show a friendly non-blocking message.
+- Preserve the existing mobile-first design.
+
+Do not redesign the app.
+
+9. Preserve existing features
+
+Do not break:
+- guest plan generation
+- local/browser storage fallback
+- garden setup
+- photo scanner
+- plant recommendations
+- Custom Selection logic
+- Foliage & Ornamental Plants category
+- garden map
+- plant table
+- weekly schedule
+- weather-risk card
+- alert settings
+- PDF download
+- share plan
+- mobile layout
+
+10. Final QA test cases
+
+After implementation, test and confirm:
+
+Case A — Guest flow still works:
+- User does not log in.
+- User creates a garden plan.
+Expected:
+- plan generates and remains available locally.
+
+Case B — Logged-in save:
+- User logs in.
+- User creates a garden plan.
+- Refresh app or log out/log back in.
+Expected:
+- saved plan loads automatically from database.
+
+Case C — Logged-in update:
+- User logs in.
+- User changes plant selections or regenerates plan.
+- Refresh app.
+Expected:
+- updated plan is loaded, not old plan.
+
+Case D — Guest-to-login transition:
+- User creates plan as guest.
+- User logs in.
+Expected:
+- local guest plan is saved to that user account and loaded.
+
+Case E — Existing account plan conflict:
+- User already has saved database plan.
+- User creates different local guest plan.
+- User logs in.
+Expected:
+- app does not silently overwrite saved account plan.
+- user is asked which plan to keep, or account plan is preserved with a clear message.
+
+Case F — Another user privacy:
+- User A creates saved plan.
+- User B logs in.
+Expected:
+- User B cannot see User A’s plan.
+
+Case G — Database unavailable:
+- Save/fetch fails.
+Expected:
+- app does not crash
+- local plan remains usable
+- friendly sync failure message appears
+
+11. Final response
+
+After implementation, provide:
+- summary of current auth/database architecture discovered
+- files/functions changed
+- database/schema changes made, if any
+- how plan save works
+- how plan load on login works
+- how guest-to-account transition works
+- security/privacy confirmation
+- pass/fail results for the QA cases above
+- confirmation that the app still runs without errors

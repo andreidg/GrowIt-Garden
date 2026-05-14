@@ -9,7 +9,7 @@ const OIDC_COOKIE    = "growit_oidc";
 const SESSION_TTL    = 7 * 24 * 60 * 60 * 1000;
 const OIDC_TTL       = 10 * 60 * 1000;
 
-interface SessionUser {
+export interface SessionUser {
   id: string;
   username: string;
   name: string;
@@ -18,6 +18,22 @@ interface SessionUser {
 
 // In-memory session store — fine for a single-server garden planner
 const sessions = new Map<string, { user: SessionUser; expires: number }>();
+
+/**
+ * Look up the current user from the session cookie. Returns null if no valid
+ * session exists. Used by `requireAuth` middleware (see ./require-auth.ts) so
+ * other routes can gate access to authenticated endpoints.
+ */
+export function getSessionUserFromRequest(req: Request): SessionUser | null {
+  const sid = req.cookies?.[SESSION_COOKIE] as string | undefined;
+  if (!sid) return null;
+  const session = sessions.get(sid);
+  if (!session || session.expires < Date.now()) {
+    if (session) sessions.delete(sid);
+    return null;
+  }
+  return session.user;
+}
 
 let oidcConfig: oidc.Configuration | null = null;
 

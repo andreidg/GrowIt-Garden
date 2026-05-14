@@ -5,6 +5,7 @@ import forecastRouter from "./forecast";
 import aiPlanRouter from "./ai-plan";
 import analyzePhotoRouter from "./analyze-photo";
 import authRouter from "./auth";
+import plansRouter from "./plans";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(forecastRouter);
 router.use(aiPlanRouter);
 router.use(analyzePhotoRouter);
 router.use(authRouter);
+router.use(plansRouter);
 
 export default router;

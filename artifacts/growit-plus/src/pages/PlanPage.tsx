@@ -19,9 +19,12 @@ import { downloadPlanAsPdf } from "@/utils/pdf-export";
 interface PlanPageProps {
   plan: GeneratedPlan;
   onStartOver: () => void;
+  /** Notify the parent (App) when the plan is mutated (e.g. user edits plants),
+   *  so it can sync the new plan to the server for authenticated users. */
+  onPlanUpdated?: (plan: GeneratedPlan) => void;
 }
 
-export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
+export default function PlanPage({ plan, onStartOver, onPlanUpdated }: PlanPageProps) {
   const [activeTab, setActiveTab] = useState<PlanTab>("map");
   const [copied, setCopied]       = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -69,6 +72,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
     const newPlan = generatePlan(updatedProfile, localPlan.region);
     setLocalPlan(newPlan);
     savePlan(newPlan);
+    onPlanUpdated?.(newPlan);
     setEditingPlants(false);
     setEditSaving(false);
   };
