@@ -343,22 +343,25 @@ interface SelectionResult {
   cautionNotes: string[];
 }
 
-/** Select from the user's explicit plant ID list. */
+/** Select from the user's explicit plant ID list.
+ *  All user-chosen plants are honoured as long as they pass sunlight/container
+ *  compatibility checks.  We intentionally skip fitToArea here because the user
+ *  has made a deliberate choice — limiting the list by area would silently drop
+ *  plants they explicitly asked for. */
 function selectFromUserList(profile: GardenProfile, customItems: PlantItem[]): SelectionResult {
-  const totalArea = profile.lengthFt * profile.widthFt;
   const cautions: string[] = [];
 
   const requested = (profile.selectedPlantIds ?? [])
     .map(id => ALL_PLANTS.find(p => p.id === id))
     .filter((p): p is PlantItem => p !== undefined);
 
-  // Sunlight filter
+  // Sunlight filter — warn but honour the choice when borderline
   const sunOk  = requested.filter(p => sunlightCompatible(profile.sunlight, p.minSunlight));
   const sunBad = requested.filter(p => !sunlightCompatible(profile.sunlight, p.minSunlight));
   if (sunBad.length > 0) {
     cautions.push(
       `${sunBad.map(p => p.name).join(", ")} ${sunBad.length === 1 ? "needs" : "need"} ` +
-      `more sunlight than your ${profile.sunlight} garden offers — excluded from this plan.`
+      `more sunlight than your ${profile.sunlight} garden offers and ${sunBad.length === 1 ? "has" : "have"} been excluded from this plan.`
     );
   }
 
@@ -370,27 +373,15 @@ function selectFromUserList(profile: GardenProfile, customItems: PlantItem[]): S
     if (large.length > 0) {
       cautions.push(
         `${large.map(p => p.name).join(", ")} ${large.length === 1 ? "is" : "are"} ` +
-        `too large for containers — excluded. Consider a raised bed or in-ground area.`
+        `too large for containers and ${large.length === 1 ? "has" : "have"} been excluded. Consider a raised bed or in-ground area.`
       );
     }
   }
 
-  // Merge custom plants and fit to area
-  const allCandidates = dedupeById([...pool, ...customItems]);
-  const fitted   = fitToArea(allCandidates, totalArea);
-  const excluded = allCandidates.filter(
-    p => !fitted.some(f => f.id === p.id) && !customItems.some(c => c.id === p.id)
-  );
+  // Merge with custom plants (deduplicated)
+  const plants = dedupeById([...pool, ...customItems]);
 
-  if (excluded.length > 0) {
-    cautions.push(
-      `Some of your selections didn't fit in your ${totalArea} sq ft space and were left out: ` +
-      `${excluded.map(p => p.name).join(", ")}. ` +
-      `Try a larger garden area, or reduce your plant selection to fit them all.`
-    );
-  }
-
-  return { plants: fitted, cautionNotes: cautions };
+  return { plants, cautionNotes: cautions };
 }
 
 /** Wrapper: route to user selection or smart selection as appropriate. */
@@ -401,17 +392,12 @@ function selectPlants(profile: GardenProfile): SelectionResult {
     `The schedule timing shown is approximate — research the best planting window for your specific variety.`
   );
 
-  // DEBUG
-  console.log("[GrowIt] selectPlants called with selectedPlantIds:", profile.selectedPlantIds);
-
   if (profile.selectedPlantIds && profile.selectedPlantIds.length > 0) {
     const { plants, cautionNotes } = selectFromUserList(profile, customItems);
-    console.log("[GrowIt] selectFromUserList returned plants:", plants.map(p => p.id));
     return { plants, cautionNotes: [...cautionNotes, ...customCautions] };
   }
 
   // Smart deterministic selection
-  console.log("[GrowIt] Falling back to smartSelectPlants");
   const { plants, cautionNotes } = smartSelectPlants(profile);
   return {
     plants: [...plants, ...customItems],

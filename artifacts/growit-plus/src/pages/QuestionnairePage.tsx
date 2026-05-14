@@ -56,7 +56,7 @@ type PlantFilter = "all" | "vegetables" | "herbs" | "flowers";
 // ---------------------------------------------------------------------------
 
 function PlantSection({
-  title, emoji, plants, selectedPlantIds, onToggle, onToggleAll,
+  title, emoji, plants, selectedPlantIds, onToggle, onToggleAll, onRecommend, recommendNote,
 }: {
   title: string;
   emoji: string;
@@ -64,19 +64,36 @@ function PlantSection({
   selectedPlantIds: string[];
   onToggle: (id: string) => void;
   onToggleAll: () => void;
+  onRecommend: () => void;
+  recommendNote?: string;
 }) {
-  const allSelected  = plants.length > 0 && plants.every(p => selectedPlantIds.includes(p.id));
-  const someSelected = plants.some(p => selectedPlantIds.includes(p.id));
+  const allSelected = plants.length > 0 && plants.every(p => selectedPlantIds.includes(p.id));
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest">
+      <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+        <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest shrink-0">
           {emoji} {title}
         </h3>
-        <button onClick={onToggleAll} className="text-xs text-forest font-semibold hover:underline">
-          {allSelected ? "Deselect all" : someSelected ? "Select all" : "Select all"}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={onRecommend}
+            className="text-xs bg-forest text-cream px-3 py-1.5 rounded-full font-semibold hover:bg-forest/85 active:scale-95 transition-all"
+          >
+            Pick My Plants
+          </button>
+          <button
+            onClick={onToggleAll}
+            className="text-xs text-forest/50 font-medium hover:text-forest transition-colors"
+          >
+            {allSelected ? "Deselect all" : "Select all"}
+          </button>
+        </div>
       </div>
+      {recommendNote && (
+        <div className="mb-2 bg-forest/6 border border-forest/12 rounded-xl px-3 py-2">
+          <p className="text-xs text-forest/70 leading-snug">{recommendNote}</p>
+        </div>
+      )}
       <div className="flex flex-col gap-1.5">
         {plants.map(plant => {
           const selected = selectedPlantIds.includes(plant.id);
@@ -138,6 +155,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
 
   // ── Step 3 ───────────────────────────────────────────────────────────────
   const [selectedPlantIds, setSelectedPlantIds] = useState<string[]>([]);
+  const [recommendNotes,   setRecommendNotes]   = useState<Record<string, string>>({});
 
   const [customPlants,     setCustomPlants]     = useState<CustomPlant[]>([]);
   const [showCustomForm,   setShowCustomForm]   = useState(false);
@@ -247,6 +265,41 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
       const allOn = ids.every(id => prev.includes(id));
       return allOn ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])];
     });
+  };
+
+  // ── Plant recommendation ─────────────────────────────────────────────────
+  const SUNLIGHT_SCORE: Record<string, number> = {
+    "Full Sun": 5, "Part Sun": 4, "Partial Shade": 3,
+    "Part Shade": 3, "Dappled Shade": 2, "Full Shade": 1,
+  };
+
+  const recommendForCategory = (categoryPlants: PlantItem[], categoryKey: string) => {
+    const primary = areas[0]!;
+    const { sunlight, soilType, lengthFt, widthFt } = primary;
+    const totalArea = lengthFt * widthFt;
+    const gardenScore = SUNLIGHT_SCORE[sunlight] ?? 3;
+
+    let pool = categoryPlants.filter(p => {
+      const plantScore = SUNLIGHT_SCORE[p.minSunlight] ?? 3;
+      return gardenScore >= plantScore - 1;
+    });
+
+    if (soilType === "Container/Pots") pool = pool.filter(p => p.spacingFt <= 1);
+    if (totalArea < 8)       pool = pool.filter(p => p.spacingFt <= 1);
+    else if (totalArea < 16) pool = pool.filter(p => p.spacingFt <= 2);
+
+    const recIds = pool.map(p => p.id);
+    setSelectedPlantIds(prev => [...new Set([...prev, ...recIds])]);
+    setPlantError(false);
+
+    let note: string;
+    if (pool.length === 0) {
+      note = "No plants in this category suit your current garden conditions — try adjusting the sunlight or soil settings.";
+    } else {
+      const ctx = soilType === "Container/Pots" ? "container" : `${sunlight.toLowerCase()} garden`;
+      note = `GrowIt picked ${pool.length} plant${pool.length !== 1 ? "s" : ""} suited to your ${ctx}.`;
+    }
+    setRecommendNotes(prev => ({ ...prev, [categoryKey]: note }));
   };
 
   const addCustomPlant = () => {
@@ -612,6 +665,8 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                 selectedPlantIds={selectedPlantIds}
                 onToggle={togglePlant}
                 onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
+                onRecommend={() => recommendForCategory(VEGETABLES, "vegetables")}
+                recommendNote={recommendNotes["vegetables"]}
               />
             )}
             {(plantFilter === "all" || plantFilter === "herbs") && (
@@ -621,6 +676,8 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                 selectedPlantIds={selectedPlantIds}
                 onToggle={togglePlant}
                 onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
+                onRecommend={() => recommendForCategory(HERBS, "herbs")}
+                recommendNote={recommendNotes["herbs"]}
               />
             )}
             {(plantFilter === "all" || plantFilter === "flowers") && (
@@ -630,6 +687,8 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                 selectedPlantIds={selectedPlantIds}
                 onToggle={togglePlant}
                 onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
+                onRecommend={() => recommendForCategory(FLOWERS, "flowers")}
+                recommendNote={recommendNotes["flowers"]}
               />
             )}
 
@@ -770,10 +829,15 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                     <p className="text-xs text-forest/50 mt-0.5">{desc}</p>
                   </div>
                   <button
+                    type="button"
+                    aria-pressed={on}
                     onClick={() => set(!on)}
-                    className={`relative w-12 h-6 rounded-full shrink-0 transition-colors duration-200 ${on ? "bg-forest" : "bg-forest/20"}`}
+                    className={`relative w-12 h-7 rounded-full shrink-0 transition-colors duration-200 focus:outline-none ${on ? "bg-forest" : "bg-forest/20"}`}
                   >
-                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${on ? "translate-x-6" : "translate-x-0.5"}`} />
+                    <span
+                      className="absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200"
+                      style={{ left: on ? "calc(100% - 1.5rem)" : "0.25rem" }}
+                    />
                   </button>
                 </div>
               ))}

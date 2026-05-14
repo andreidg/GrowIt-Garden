@@ -1,0 +1,94 @@
+Before moving to final presentation polish, implement these two targeted changes. Do not rebuild the app from scratch.
+
+Keep the existing app stable. Do not add authentication, payments, Supabase, Mixpanel, premium enforcement, live chat, Gemini video, pest diagnosis, e-commerce, or admin dashboard.
+
+1. Fix alert toggle sliders
+
+There is a UI bug on the alert settings screen.
+
+Current issue:
+- The toggle buttons do not work correctly.
+- The white circular knob moves off to the right side of the toggle.
+- When toggled off, the knob should sit on the left.
+- When toggled on, the knob should sit on the right.
+- The knob must stay inside the rounded toggle track at all times.
+
+Fix requirements:
+- Make every alert toggle functional.
+- Use proper on/off state.
+- Off state:
+  - track should be muted/grey
+  - white knob should be aligned left
+- On state:
+  - track should be dark green
+  - white knob should be aligned right
+- The knob should never overflow outside the toggle container.
+- The entire toggle row or toggle button should be clickable/tappable.
+- Ensure the toggle works on mobile touch screens.
+- Apply the fix to:
+  - Frost Warnings
+  - Hail Alerts
+  - Planting Reminders
+  - Watering Days
+- Do not break the alert settings page layout.
+
+Implementation note:
+Use a reliable toggle pattern with a fixed-width rounded container, an absolutely positioned knob, and transform/translate logic based on checked state. Avoid CSS that lets the knob extend outside the track.
+
+2. Update plant selection to support both manual selection and app recommendation
+
+We want users to have two options:
+A) manually select specific plants they want in their garden, or
+B) let GrowIt recommend plants for them based on their garden inputs.
+
+Do not make manual plant selection the only path.
+
+Add a button to each plant selection category called:
+“Pick My Plants”
+
+Plant categories should include:
+- Vegetables
+- Herbs
+- Flowers
+
+Button behaviour:
+- Each category should have its own “Pick My Plants” button.
+- When the user clicks “Pick My Plants” in a category, GrowIt should automatically recommend suitable plants from that category based on:
+  - growing region
+  - frost dates
+  - garden area size
+  - sunlight level
+  - soil/container type
+  - selected garden goal/type
+  - available space
+- The app should then select or add the recommended plants from that category.
+- The user should still be able to manually add or remove plants after GrowIt recommends them.
+- If a plant is not suitable for the selected conditions, do not select it automatically.
+- If the available space is limited, select a smaller number of suitable plants and show a short note explaining that recommendations were limited by space or conditions.
+
+Manual selection requirements:
+- Users can still manually select individual plants.
+- Users can still add a custom plant.
+- Manual selections should be treated as preferences, not guaranteed placements if conditions are unsuitable.
+- If a selected plant may not work well, show a warning and suggest a better alternative.
+
+Product logic:
+- GrowIt should be recommendation-first, with optional customization.
+- The core value is that GrowIt recommends what to plant, where to plant it, and when to plant it.
+- Manual plant selection supports customization, but should not replace the recommendation engine.
+
+3. Final check after implementation
+
+After making these changes, provide a concise checklist confirming:
+- Alert toggles work.
+- Toggle knobs stay inside the switch.
+- Off state moves knob left.
+- On state moves knob right.
+- Vegetables category has “Pick My Plants.”
+- Herbs category has “Pick My Plants.”
+- Flowers category has “Pick My Plants.”
+- App recommendations work by category.
+- Manual plant selection still works.
+- Custom plant entry still works.
+- Generated plan still works after recommendations.
+- App still runs without errors.
