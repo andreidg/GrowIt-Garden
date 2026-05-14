@@ -3,7 +3,7 @@ import { REGION_KEYS, GROWING_REGIONS } from "@/data/locations";
 import { VEGETABLES, HERBS, FLOWERS, type PlantItem } from "@/data/plants";
 import type { GardenProfile, SunlightLevel, SoilType, UnitSystem, GardenArea, CustomPlant, PlantType } from "@/types/garden";
 import { UNIT_CONFIG, capToMax, toInternalFt } from "@/utils/units";
-import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X, Camera } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2, Check, X } from "lucide-react";
 import PhotoAnalyzer, { ConfidenceBadge, type Confidence } from "@/components/PhotoAnalyzer";
 
 interface QuestionnairePageProps {
@@ -195,7 +195,6 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
   });
   const [capWarnings,  setCapWarnings]  = useState<Record<string, boolean>>({});
   const [areaConfs,    setAreaConfs]    = useState<Record<string, { sunlight: Confidence | null; soil: Confidence | null }>>({});
-  const [showPhotoFor, setShowPhotoFor] = useState<string | null>(null);
 
   // ── Step 3 ───────────────────────────────────────────────────────────────
   const [gardenGoal,       setGardenGoal]       = useState<string>("");
@@ -282,7 +281,6 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
     setAreas(prev => prev.filter(a => a.id !== id));
     setAreaInputs(prev => { const n = { ...prev }; delete n[id]; return n; });
     setCapWarnings(prev => { const n = { ...prev }; delete n[id]; return n; });
-    if (showPhotoFor === id) setShowPhotoFor(null);
   };
 
   const handlePhotoResult = (areaId: string, r: {
@@ -296,7 +294,6 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
       ...prev,
       [areaId]: { sunlight: r.sunlightConfidence, soil: r.soilTypeConfidence },
     }));
-    setShowPhotoFor(null);
   };
 
   // ── Plant selection ───────────────────────────────────────────────────────
@@ -529,20 +526,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                 <div className="p-4 flex flex-col gap-5">
 
                   {/* Photo scanner for this area */}
-                  <div>
-                    <button
-                      onClick={() => setShowPhotoFor(showPhotoFor === area.id ? null : area.id)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-forest/25 text-xs font-medium text-forest/55 hover:border-forest/40 hover:text-forest/75 transition-all bg-cream"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      {showPhotoFor === area.id ? "Close photo scanner" : "Scan a photo to auto-detect sunlight & soil"}
-                    </button>
-                    {showPhotoFor === area.id && (
-                      <div className="mt-3 bg-forest/5 border border-forest/10 rounded-xl p-3">
-                        <PhotoAnalyzer onResult={r => handlePhotoResult(area.id, r)} />
-                      </div>
-                    )}
-                  </div>
+                  <PhotoAnalyzer onResult={r => handlePhotoResult(area.id, r)} />
 
                   {/* Dimensions */}
                   <div>
