@@ -1,0 +1,230 @@
+The GrowIt app is essentially complete. Please run a final full QA/QC audit of the entire app.
+
+Important:
+- Do not rebuild the app from scratch.
+- Do not redesign the app.
+- Do not add new major features.
+- Do not change key features or product direction.
+- Only fix clear bugs, broken functionality, inconsistent copy, layout issues, or issues that prevent the app from working correctly.
+
+Do not add:
+- authentication
+- payments
+- Supabase
+- Mixpanel
+- premium enforcement
+- live chat
+- Gemini video
+- pest diagnosis
+- e-commerce
+- admin dashboard
+- native mobile deployment
+
+QA/QC objective:
+Make sure the existing GrowIt app fully works, is stable, is demo-ready, and does not have broken flows before final submission.
+
+Please first perform the QA audit and provide a checklist with:
+- Pass
+- Fail
+- Needs review
+
+Then fix only clear Fail items. Do not change items marked Needs review unless they are obvious bugs.
+
+Check the following areas:
+
+1. App launch and basic stability
+- App loads without blank screens.
+- No runtime crashes.
+- No console errors during normal use.
+- Navigation works between all steps.
+- Back/next buttons work.
+- User can restart the plan flow.
+
+2. Branding and positioning
+- App name is “GrowIt” everywhere.
+- No remaining “GrowIt+” visible to users.
+- App is not branded as Calgary-only.
+- Calgary remains the default demo region only.
+- Other regions are selectable.
+
+3. Mobile-first responsiveness
+Check at:
+- mobile width around 390px
+- mobile width around 430px
+- tablet width
+- desktop width
+
+Confirm:
+- content is not cut off
+- buttons are tappable
+- cards stack properly
+- no unwanted horizontal overflow
+- text remains readable
+- garden map and plant table remain usable
+
+4. Step 1 / landing page
+- Landing page looks polished.
+- Logo/wordmark is readable.
+- Main CTA works.
+- Copy clearly explains the app.
+- No broken buttons or links.
+
+5. Step 2 / garden spaces and photo scanner
+- User can add and edit garden spaces.
+- Unit toggle works between imperial and metric.
+- Dimension cap works:
+  - 20ft x 20ft
+  - approximately 6.1m x 6.1m
+- Cap warning text is correct.
+- Photo upload works.
+- Uploaded photo appears inside the scanner window.
+- Photo preview stays contained and responsive.
+- Analysis/loading state appears.
+- Analysis result panel/dropdown appears.
+- Sunlight field updates after photo analysis.
+- Soil/container field updates after photo analysis.
+- Confidence labels appear:
+  - High
+  - Medium
+  - Low
+- If photo analysis fails, uploaded photo still appears and manual entry remains usable.
+- User can skip photo upload.
+
+6. Sunlight and soil options
+Sunlight options should include:
+- Full sun
+- Part sun
+- Part shade
+- Full shade
+- Dappled shade
+
+Each should have useful explanatory text or tooltip.
+
+Soil/container options should include:
+- Raised Bed
+- In-Ground Clay
+- In-Ground Loam
+- Container/Pots
+
+7. Plant selection and recommendations
+- Vegetables, herbs, and flowers are supported.
+- Users can manually select plants.
+- Users can multi-select plants.
+- Each plant category has a working “Pick My Plants” button.
+- “Pick My Plants” recommends appropriate plants based on the user’s garden inputs.
+- Users can add a custom plant.
+- Custom plants do not break the plan.
+- Users can remove or adjust plant choices before generation.
+
+8. Plan generation
+- Plan generation works without requiring OpenAI.
+- Deterministic fallback works.
+- OpenAI, if available, enhances but does not block generation.
+- Plan generation works for:
+  - Calgary default
+  - another region
+  - imperial units
+  - metric units
+  - small garden
+  - multiple garden areas
+  - flowers-only or flower-heavy selection
+  - custom plant
+  - no photo uploaded
+
+9. Garden map
+- Garden map renders correctly.
+- Garden areas are clearly represented.
+- Plant cells show emoji/icon and abbreviated plant name.
+- Category styling is clear:
+  - vegetables
+  - herbs
+  - flowers
+- No “Companion Planting Notice” appears.
+- No incompatibility warnings appear.
+- No warning triangle appears on plant cells.
+- Plant details do not mention incompatible neighbours or conflict warnings.
+- Tap/click on plant cells works if detail panels are implemented.
+
+10. Plant table under Garden Map
+- Plant table fits screen.
+- Mobile layout works.
+- No text overflows badly.
+- No unreadably small text.
+- It shows useful plant information such as:
+  - name
+  - category
+  - area
+  - spacing or notes
+  - action type
+
+11. Weekly schedule / calendar
+- Schedule renders correctly.
+- Current week is highlighted.
+- Empty weeks show exactly:
+  “No actions this week — just water and watch!”
+- Schedule works for vegetables, herbs, and flowers.
+- Schedule works for multiple garden areas.
+- Schedule uses local frost dates.
+- Schedule remains readable on mobile.
+
+12. Weather-risk card
+- Weather-risk card loads if available.
+- If weather API fails, show:
+  “Live weather is unavailable right now. Your plan still uses local frost-date guidance.”
+- Weather does not block plan generation.
+- Weather is advisory only.
+
+13. Alert settings screen
+- Alert toggles work.
+- Toggle knob stays inside the track.
+- Off state moves knob left.
+- On state moves knob right.
+- Entire toggle is clickable/tappable.
+- Alert settings do not break the app even if they are preview-only.
+
+14. Download and share
+- Print button is not shown as a primary action.
+- Download Plan works.
+- Downloaded file is readable.
+- Share Plan works using Web Share API if supported.
+- If Web Share API is not supported, fallback copies summary to clipboard.
+- Clipboard fallback confirmation appears:
+  “Plan summary copied to clipboard.”
+
+15. Storage and persistence
+- Plan persists on refresh if local/browser storage is implemented.
+- Restart/start-over option works.
+- Storage does not corrupt the app if old data exists.
+- App handles missing or invalid stored data gracefully.
+
+16. Error and fallback states
+- Missing inputs show helpful validation.
+- API failures do not crash the app.
+- Photo analysis failure does not block the user.
+- Weather failure does not block the user.
+- OpenAI failure does not block the user.
+- No raw stack traces or technical errors appear to users.
+
+17. Security and secrets
+- No API keys are exposed in frontend code.
+- No secrets are committed.
+- Environment variables are referenced safely.
+- README does not contain real secret values.
+
+18. Documentation sanity
+- README accurately reflects current functionality.
+- README does not claim features that are not actually working.
+- Known limitations are accurate.
+- Course context is included.
+- MIT license exists.
+
+After the audit:
+1. Provide the pass/fail/needs-review checklist.
+2. Fix only clear fail items.
+3. Run typecheck/build if available.
+4. Provide a final confirmation checklist showing:
+   - app runs
+   - key flows work
+   - no key features changed
+   - no new major features added
+   - app is ready for demo and final submission
