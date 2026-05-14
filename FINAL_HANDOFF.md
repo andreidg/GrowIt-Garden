@@ -9,7 +9,7 @@
 The app is published as a static frontend + Express API on Replit Deployments. The deployment URL is also exposed via `$REPLIT_DOMAINS` at runtime.
 
 ## 3. GitHub repository URL
-> _Replace before submission:_ `https://github.com/<org-or-user>/sproutit`
+https://github.com/andreidg/SproutIt
 
 ## 4. Product summary
 SproutIt turns four short answers — your Alberta city, your garden dimensions, your light/soil conditions, and what you want to grow — into a complete garden plan: a colour-coded garden map, a frost-anchored week-by-week planting schedule, a curated plant list across vegetables / herbs / flowers / foliage, and a live 7-day weather-risk advisory. It works without an account (plans persist in `localStorage`), and signing in with Replit Auth syncs the active plan to a PostgreSQL-backed account so it follows the user across devices and browsers.
