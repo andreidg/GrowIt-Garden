@@ -176,15 +176,15 @@ export default function App() {
             page already has its own sign-in/out control in the hero, so we
             only render this when the user is past it. */}
         {isAuthenticated && step !== "landing" && (
-          <div className="w-full bg-cream-light border-b border-cream-dark px-6 py-2 flex items-center justify-end gap-3 shrink-0 text-xs min-w-0">
+          <div className="w-full bg-forest border-b border-forest px-6 py-2 flex items-center justify-end gap-3 shrink-0 text-xs min-w-0">
             {user?.name?.trim() && (
-              <span className="text-forest/60 truncate min-w-0">
-                Signed in as <span className="font-semibold text-forest">{user.name.trim()}</span>
+              <span className="text-cream/70 truncate min-w-0">
+                Signed in as <span className="font-semibold text-cream">{user.name.trim()}</span>
               </span>
             )}
             <button
               onClick={logout}
-              className="text-forest/70 hover:text-forest font-semibold underline-offset-2 hover:underline shrink-0"
+              className="text-cream/80 hover:text-cream font-semibold underline-offset-2 hover:underline shrink-0"
               data-testid="btn-sign-out"
             >
               Sign out
