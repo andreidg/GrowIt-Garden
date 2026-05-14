@@ -190,10 +190,6 @@ export default function GardenGrid({
               <span>{CAT[type].label}</span>
             </div>
           ))}
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-terracotta/30 bg-white text-[10px] font-semibold text-terracotta">
-            <span>⚠️</span>
-            <span>Conflict</span>
-          </div>
         </div>
       </div>
 
