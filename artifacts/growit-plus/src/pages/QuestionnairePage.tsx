@@ -927,7 +927,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
                 }}
                 data-testid="btn-next-step"
                 className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
-                {gardenGoal && gardenGoal !== "custom" ? "Generate My Plan" : "Continue"}
+                Continue
               </button>
             </div>
           </div>
