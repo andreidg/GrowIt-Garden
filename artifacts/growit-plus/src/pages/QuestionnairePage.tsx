@@ -896,6 +896,13 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
               </div>
             )}
 
+            {/* Custom selection: no plants picked */}
+            {plantError && gardenGoal === "custom" && totalSelected === 0 && (
+              <div className="bg-terracotta/10 border border-terracotta/25 rounded-xl px-4 py-3">
+                <p className="text-sm font-medium text-terracotta">Select at least one plant, or choose a recommended garden goal.</p>
+              </div>
+            )}
+
             <div className="pt-2 pb-6">
               <button
                 onClick={() => {

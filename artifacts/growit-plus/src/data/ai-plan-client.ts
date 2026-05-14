@@ -54,6 +54,19 @@ export async function generateAIPlan(
   profile: GardenProfile,
   region:  GrowingRegion,
 ): Promise<AIPlanResult> {
+  // ── Custom selection bypass ────────────────────────────────────────────
+  // When the user explicitly chose "Custom selection", their picked plants
+  // are the source of truth. Skip the AI entirely and use the deterministic
+  // generator, which routes to selectFromUserList() and honours the user's
+  // selectedPlantIds + customPlants strictly.
+  if (profile.gardenGoal === "custom") {
+    return {
+      plan:           generatePlan(profile, region),
+      aiUsed:         false,
+      fallbackReason: null,
+    };
+  }
+
   try {
     const res = await fetch("/api/ai-plan", {
       method:  "POST",
