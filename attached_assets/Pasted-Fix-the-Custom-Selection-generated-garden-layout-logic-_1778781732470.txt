@@ -1,0 +1,168 @@
+Fix the Custom Selection → generated garden layout logic so the map is dynamic and respects the user’s selected plants.
+
+Current issue:
+- In Step 3, when the user chooses “Custom selection” and selects only flowers, the generated garden still shows a generic mixed garden with vegetables, herbs, and flowers.
+- Example: user selects only flowers, but the generated map includes carrots, kale, spinach, lettuce, radishes, peas, beans, tomatoes, cucumbers, herbs, etc.
+- This means the garden map is still behaving like a static/default recommendation layout instead of dynamically reflecting the user’s actual selections.
+
+Do not rebuild the app from scratch. Debug and fix the current selection → generation → map rendering flow.
+
+Core requirement:
+When the user chooses Custom selection, the generated plan must use only the plants the user selected, plus any custom plants they manually added. It must not auto-add unselected categories or default/generic plants.
+
+1. Debug the data flow
+
+Trace and fix the full flow:
+- Step 3 selected plant state
+- Pick My Plants button state
+- manual checkbox/card selections
+- custom plant entries
+- data passed into the plan generator
+- generated plan plant list
+- generated garden map cells
+- plant table
+- weekly schedule
+- download/share summary
+
+Make sure the selected plant IDs/categories are actually passed into the generation function and used when building the output.
+
+2. Custom selection must be strict
+
+When garden goal/type is “Custom selection”:
+- Treat selected plants as the source of truth.
+- Do not use the default recommended plant set.
+- Do not use a generic garden map.
+- Do not fill open spaces with unselected plants.
+- Do not auto-add vegetables, herbs, or flowers unless the user selected them.
+- If only flowers are selected, the generated map must show only flowers.
+- If only herbs are selected, the generated map must show only herbs.
+- If only vegetables are selected, the generated map must show only vegetables.
+- If a mix is selected, the generated map must show only that selected mix.
+
+3. Pick My Plants category behaviour
+
+Each category-level “Pick My Plants” button must only select plants from that category:
+- Flowers → only flowers
+- Herbs → only herbs
+- Vegetables → only vegetables
+
+If the user clicks “Pick My Plants” under Flowers and does not select anything else, the generated plan should contain only flowers.
+
+If the user clicks Flowers + Herbs, the generated plan should contain only selected flowers and selected herbs.
+
+4. Manual selection behaviour
+
+Manual checkmarks must be respected:
+- If the user manually selects Marigolds, Nasturtiums, Calendula, Pansies, and Violas only, those should be the only plants considered for the generated layout.
+- Do not add plants from the whitelist just because they are suitable.
+- Do not add filler plants.
+
+5. Make the layout dynamic and smart
+
+The generated garden map should not be a static template.
+
+It should dynamically build the map based on:
+- selected garden area(s)
+- dimensions
+- unit system
+- sunlight level
+- soil/container type
+- selected plants
+- custom plants
+- available space
+
+For Custom selection:
+- place the selected plants intelligently across the available grid
+- repeat selected plants if space allows and it makes sense
+- leave empty cells if there are fewer selected plants than spaces
+- do not fill empty cells with unselected plants
+- if a selected plant is unsuitable for an area, either:
+  - place it with a gentle caution note, or
+  - exclude it and show a note explaining why
+- do not replace unsuitable selected plants with unrelated unselected plants unless the user explicitly chose a recommendation goal rather than Custom selection
+
+6. Empty custom selection handling
+
+If the user chooses Custom selection but selects no plants and adds no custom plants:
+- prevent generation
+- show:
+  “Select at least one plant, or choose a recommended garden goal.”
+- Do not generate a default mixed garden.
+
+7. Non-custom recommendation goals should still work
+
+Do not break the recommendation logic for other garden goals:
+- Beginner-friendly
+- Vegetable-focused
+- Herbs & Flowers
+- Pollinator-friendly
+- Family / Kid-friendly
+
+For those non-custom goals, GrowIt may recommend plants based on the garden inputs.
+
+But for Custom selection, the output must follow the user’s selections.
+
+8. Update all generated outputs
+
+The selected-plant filtering must apply consistently to:
+- generated plan data
+- garden map
+- plant table
+- weekly schedule
+- downloaded plan
+- shared plan summary
+
+There should not be a situation where the map shows unselected plants while the plant list shows selected plants, or vice versa.
+
+9. Final QA test cases
+
+After fixing, test and confirm:
+
+Case A:
+- Goal: Custom selection
+- Click Pick My Plants under Flowers only
+- Generate plan
+Expected:
+- garden map shows flowers only
+- plant table shows flowers only
+- weekly schedule shows flower-related actions only
+- no vegetables or herbs appear
+
+Case B:
+- Goal: Custom selection
+- Manually select only Marigolds
+- Generate plan
+Expected:
+- generated plan uses Marigolds only, repeated or placed where appropriate
+- no other plants appear
+
+Case C:
+- Goal: Custom selection
+- Select Marigolds, Pansies, Basil, and Thyme
+- Generate plan
+Expected:
+- only those selected flowers/herbs appear
+- no vegetables appear
+
+Case D:
+- Goal: Custom selection
+- Select nothing
+- Generate plan
+Expected:
+- app asks the user to select at least one plant or choose a recommended garden goal
+- no default garden is generated
+
+Case E:
+- Goal: Vegetable-focused
+- Generate plan without manual selections
+Expected:
+- recommendation logic still works normally
+
+10. Final response
+
+After implementation, provide:
+- what bug caused the generic garden map behaviour
+- what files/functions were changed
+- confirmation that Custom selection now uses selected plants as the source of truth
+- confirmation that non-custom recommendation goals still work
+- pass/fail results for the five QA cases above
