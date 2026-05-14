@@ -18,7 +18,6 @@ export default function App() {
   const [qInitialStep, setQInitialStep] = useState(1);
   const [profile, setProfile]           = useState<GardenProfile | null>(null);
   const [plan, setPlan]                 = useState<GeneratedPlan | null>(null);
-  const [hasSavedPlan, setHasSavedPlan] = useState(false);
 
   const { isAuthenticated, isLoading: authLoading, user, logout } = useAuth();
   const { fetchPlan, savePlan: pushPlan, status: syncStatus, lastError: syncError } = usePlanSync();
@@ -35,11 +34,6 @@ export default function App() {
   const [accountPlan, setAccountPlan]           = useState<GeneratedPlan | null>(null);
   const lastSyncedIdRef                         = useRef<string | null>(null);
   const lastUserIdRef                           = useRef<string | null>(null);
-
-  // ── Initial local-only check (guest restore banner) ────────────────────
-  useEffect(() => {
-    if (loadPlan()) setHasSavedPlan(true);
-  }, []);
 
   // ── On login: fetch the user's saved plan and reconcile with local ─────
   // Re-runs when the user actually changes (login, logout, switch account).
@@ -138,7 +132,6 @@ export default function App() {
   function adoptPlan(p: GeneratedPlan, opts: { pushToServer: boolean; justSynced?: boolean }) {
     saveLocalPlan(p);
     setPlan(p);
-    setHasSavedPlan(false); // suppress the guest restore banner — we're showing the plan directly
     setStep("plan");
     if (opts.justSynced) lastSyncedIdRef.current = planFingerprint(p);
     if (!opts.pushToServer) {
@@ -159,18 +152,6 @@ export default function App() {
     if (!ok) setErrorBanner("We could not sync your plan right now. Your plan is still saved on this device.");
     adoptPlan(conflict.local, { pushToServer: false, justSynced: ok });
     setConflict(null);
-  };
-
-  // ── Existing handlers ──────────────────────────────────────────────────
-  const handleRestorePlan = () => {
-    const saved = loadPlan();
-    if (saved) { setPlan(saved); setStep("plan"); }
-    setHasSavedPlan(false);
-  };
-
-  const handleDiscardPlan = () => {
-    clearPlan();
-    setHasSavedPlan(false);
   };
 
   const startOver = () => {
@@ -255,35 +236,6 @@ export default function App() {
             >
               Open my garden →
             </Button>
-          </div>
-        )}
-
-        {/* Saved-plan restore banner (guest mode only) */}
-        {hasSavedPlan && step === "landing" && !isAuthenticated && (
-          <div className="w-full bg-forest text-cream p-4 flex flex-col sm:flex-row justify-between items-center z-50 shrink-0 gap-3">
-            <p className="text-sm font-medium text-center sm:text-left">
-              You have a saved garden plan. Restore it?
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleRestorePlan}
-                className="bg-gold text-forest hover:bg-gold/90 rounded-full"
-                data-testid="btn-restore-plan"
-              >
-                Restore
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDiscardPlan}
-                className="bg-transparent border-cream text-cream hover:bg-cream hover:text-forest rounded-full"
-                data-testid="btn-discard-plan"
-              >
-                Discard
-              </Button>
-            </div>
           </div>
         )}
 
