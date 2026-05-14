@@ -1,0 +1,83 @@
+Fix the Garden Map horizontal scrolling and clipping issue.
+
+Current issue:
+On the Garden Plan Summary / Garden Map screen, when the garden is larger such as 10ft × 8ft, the garden map does not scroll correctly. Part of the map/grid is cut off on the left side, and some content/text at the bottom is also cut off. The user cannot properly view the full garden map.
+
+Do not rebuild the app from scratch. This is a targeted layout and scrolling fix only.
+
+Required fixes:
+
+1. Fix horizontal clipping
+- The garden map/grid must not be cut off on the left or right side.
+- If the grid is wider than the visible screen, the user should be able to horizontally scroll to see the full grid.
+- The scroll area should include the full grid from the first column to the last column.
+- Do not allow the grid to be partially hidden because of parent container overflow, negative margins, fixed widths, transforms, or centering logic.
+
+2. Fix grid container layout
+- The grid should remain visually centered when it fits within the screen.
+- When the grid is wider than the screen, it should become horizontally scrollable inside its own container.
+- Use a safe wrapper structure such as:
+  - outer container: w-full overflow-x-auto
+  - inner grid wrapper: min-w-max or w-fit mx-auto
+- Avoid using layout styles that crop the grid, such as overflow-hidden on parent containers.
+- Avoid negative margins or translate positioning that causes the left side to disappear.
+
+3. Fix bottom content clipping
+- Text and controls below the map must not be cut off.
+- The “Tap a plant cell for spacing & care details” text should be fully visible.
+- Category legend/buttons below the map should be fully visible.
+- The page should allow vertical scrolling normally.
+- Do not use fixed-height containers that clip bottom content unless they have proper scrolling.
+
+4. Preserve compact centered layout
+- Keep the map more compact than before.
+- Keep plant cells readable and tappable.
+- Keep the grid centered when possible.
+- But prioritize complete visibility and scrollability over perfect centering.
+
+5. Mobile behaviour
+Test at mobile widths:
+- 390px
+- 430px
+
+Expected:
+- the full map can be viewed
+- no left-side content is permanently hidden
+- horizontal scroll works if needed
+- vertical scroll works
+- no bottom text is cut off
+- no page-level layout break occurs
+
+6. Desktop/tablet behaviour
+Expected:
+- grid is centered if it fits
+- grid remains compact
+- no unnecessary clipping
+- no awkward left alignment
+- no content cut off
+
+7. Preserve functionality
+Do not break:
+- plant cell tap/click details
+- plant emojis/icons
+- abbreviated plant names
+- category styling
+- garden area separation
+- plant table
+- weekly schedule
+- weather-risk card
+- Download PDF
+- Share Plan
+- local storage
+- mobile-first layout
+
+8. Final QA
+After implementation, confirm:
+- 10ft × 8ft garden map is fully viewable
+- left side of grid is not cut off
+- horizontal scroll works when needed
+- bottom text and legend are not cut off
+- grid remains centered when it fits
+- mobile layout works
+- desktop layout works
+- app runs without errors

@@ -103,10 +103,17 @@ export default function GardenGrid({
   return (
     <div className="flex flex-col gap-4">
 
-      {/* ── Grid ── */}
-      <div className="overflow-x-auto hide-scrollbar -mx-1 px-1 flex justify-center">
+      {/* ── Grid ──
+          Outer: edge-to-edge horizontal scroll on mobile (so the scroll area
+          reaches both screen edges and can be reached by a thumb).
+          Inner: `mx-auto w-fit` centres the grid when it fits, but when the
+          grid is wider than the viewport `mx-auto` collapses to 0 so the full
+          grid (including the leftmost column) is reachable via horizontal
+          scroll. Do NOT use `flex justify-center` here — centering an
+          overflowing child hides its left edge before scrollLeft = 0. */}
+      <div className="overflow-x-auto hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
-          className="inline-grid rounded-2xl mx-auto w-fit max-w-full"
+          className="grid rounded-2xl mx-auto w-fit"
           style={{
             gridTemplateColumns: `repeat(${cols}, ${CELL_PX}px)`,
             gridTemplateRows:    `repeat(${rows}, ${CELL_PX}px)`,

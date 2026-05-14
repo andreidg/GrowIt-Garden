@@ -255,14 +255,12 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
                     </span>
                   </div>
                   {ap.selectedPlants.length > 0 ? (
-                    <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 flex justify-center">
-                      <GardenGrid
-                        grid={getGrid(ap.area.id, ap.grid)}
-                        lengthFt={ap.area.lengthFt}
-                        widthFt={ap.area.widthFt}
-                        unitPreference={profile.unitPreference}
-                      />
-                    </div>
+                    <GardenGrid
+                      grid={getGrid(ap.area.id, ap.grid)}
+                      lengthFt={ap.area.lengthFt}
+                      widthFt={ap.area.widthFt}
+                      unitPreference={profile.unitPreference}
+                    />
                   ) : (
                     <div className="bg-cream-dark/30 rounded-2xl p-4 text-center text-sm text-forest/50">
                       No compatible plants for this area's light conditions.
@@ -276,14 +274,12 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
               <h2 className="font-serif text-xl font-semibold text-forest mb-4 text-center">
                 Your Garden Map
               </h2>
-              <div className="w-full overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 flex justify-center">
-                <GardenGrid
-                  grid={getGrid("primary", grid)}
-                  lengthFt={profile.lengthFt}
-                  widthFt={profile.widthFt}
-                  unitPreference={profile.unitPreference}
-                />
-              </div>
+              <GardenGrid
+                grid={getGrid("primary", grid)}
+                lengthFt={profile.lengthFt}
+                widthFt={profile.widthFt}
+                unitPreference={profile.unitPreference}
+              />
             </div>
           )}
 
