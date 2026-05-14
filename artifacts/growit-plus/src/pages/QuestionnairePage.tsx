@@ -1038,8 +1038,8 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
 
             <div className="pt-2 pb-6">
               <button onClick={handleSubmit} data-testid="btn-generate"
-                className="w-full bg-terracotta text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
-                Start Growing →
+                className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
+                Continue
               </button>
             </div>
           </div>
