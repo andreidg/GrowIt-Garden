@@ -50,7 +50,6 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
     ? `${localPlan.areaPlans.length} areas`
     : `${fmt(profile.lengthFt)} × ${fmt(profile.widthFt)}`;
 
-  const flowerCount   = selectedPlants.filter(p => p.type === "flower").length;
   const highRiskCount = selectedPlants.filter(p => p.riskLevel === "high").length;
 
   // ── Edit plants ─────────────────────────────────────────────────────────
@@ -158,18 +157,13 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
           <div className="bg-cream-light border border-cream-dark px-3 py-1 rounded-full text-xs font-medium text-forest">
             {gardenSizeStr}
           </div>
-          <div className="bg-cream-light border border-cream-dark px-3 py-1 rounded-full text-xs font-medium text-forest">
-            {selectedPlants.length} plants
-          </div>
           <div className="bg-cream-light border border-cream-dark px-3 py-1 rounded-full text-xs font-medium text-forest flex items-center gap-1.5">
             <span>❄️</span>
             <span>{region.lastSpringFrost} – {region.firstFallFrost}</span>
           </div>
-          {flowerCount > 0 && (
-            <div className="bg-gold/20 border border-gold/30 px-3 py-1 rounded-full text-xs font-medium text-forest">
-              {flowerCount} flower{flowerCount > 1 ? "s" : ""}
-            </div>
-          )}
+          <div className="bg-cream-light border border-cream-dark px-3 py-1 rounded-full text-xs font-medium text-forest">
+            {selectedPlants.length} plants
+          </div>
           {localPlan.generationMode === "ai" ? (
             <div
               className="flex items-center gap-1 bg-forest text-cream border border-forest/20 px-3 py-1 rounded-full text-xs font-semibold"
