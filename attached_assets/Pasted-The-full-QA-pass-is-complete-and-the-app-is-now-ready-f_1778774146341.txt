@@ -1,0 +1,116 @@
+The full QA pass is complete and the app is now ready for final presentation polish.
+
+Do not add new major features. Do not rebuild the app from scratch.
+
+Do not add:
+- authentication
+- payments
+- Supabase
+- Mixpanel
+- premium enforcement
+- live chat
+- Gemini video
+- pest diagnosis
+- e-commerce
+- admin dashboard
+
+Focus only on presentation quality, reliability, and visual polish.
+
+Final polish requirements:
+
+1. Landing page
+- Make the landing page feel polished, modern, and mobile-first.
+- Ensure the GrowIt logo/wordmark is highly readable.
+- Ensure the hero section clearly communicates the app’s value:
+  “Plan your local garden with region-aware recommendations.”
+- Keep the product positioned as location-aware, not Calgary-only.
+- Calgary can remain the default demo location.
+
+2. Mobile-first app experience
+- Make the app feel like a mobile app while remaining a responsive web app.
+- Ensure screens are clean, step-by-step, and easy to demo.
+- Buttons should be touch-friendly.
+- Forms should not feel cluttered.
+- Cards should have consistent spacing, rounded corners, and readable hierarchy.
+
+3. Design consistency
+- Use consistent GrowIt branding across the app.
+- Use the earthy garden-inspired visual style:
+  - forest green
+  - warm brown
+  - cream
+  - natural accent colours for vegetables, herbs, and flowers
+- Make headings, buttons, cards, and section spacing consistent.
+- Avoid transparent logo issues or low-contrast text.
+
+4. Garden setup flow
+- Make the setup flow easy to understand during a live demo.
+- Ensure the user can clearly see:
+  - growing region
+  - unit system
+  - garden areas
+  - sunlight
+  - soil/container type
+  - plant preferences
+  - Pick My Plants recommendation buttons
+  - custom plant entry
+
+5. Generated plan page
+- Make the generated plan page presentation-ready.
+- Ensure the top summary clearly shows:
+  - selected region
+  - garden areas
+  - unit system
+  - weather-risk status if available
+- Ensure the garden map is visually clear.
+- Ensure the plant table fits neatly on mobile.
+- Ensure the weekly schedule remains readable and prominent.
+
+6. Download and share
+- Make Download Plan and Share Plan buttons visually clear.
+- Keep them easy to find, but not visually overwhelming.
+- Confirm the share fallback message is readable.
+
+7. Error and fallback states
+- Make fallback states look intentional, not broken.
+- Photo scanner fallback message should be friendly.
+- Weather fallback message should be friendly.
+- Deterministic fallback should still work if OpenAI is unavailable.
+
+8. Demo-readiness
+- Optimize the app for this likely demo flow:
+  1. Open landing page.
+  2. Click Plan My Garden.
+  3. Use Calgary as default demo region.
+  4. Add one garden area.
+  5. Choose imperial units.
+  6. Use Pick My Plants.
+  7. Generate plan.
+  8. Show garden map.
+  9. Show weekly schedule.
+  10. Show weather-risk card.
+  11. Show Download/Share.
+
+9. Preserve working functionality
+Do not break:
+- photo scanner
+- confidence labels
+- multiple garden areas
+- imperial/metric conversion
+- plant recommendations
+- custom plants
+- vegetables/herbs/flowers
+- garden map
+- plant table
+- weekly schedule
+- weather-risk card
+- alert toggles
+- download/share
+- local storage/fallback logic
+
+10. Final response
+After polishing, provide:
+- a concise list of visual/design improvements made
+- any functionality touched
+- confirmation that no new major features were added
+- confirmation that the app is ready for demo recording
