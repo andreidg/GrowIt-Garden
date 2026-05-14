@@ -1,0 +1,137 @@
+The app has passed QA and final presentation polish. Now prepare the GitHub documentation for submission.
+
+Create or update the GitHub-ready README.md for the GrowIt app.
+
+Do not change app functionality unless needed to keep the documentation accurate.
+
+README requirements:
+
+1. Project title
+- Use: GrowIt
+
+2. Short product description
+Explain that GrowIt is a mobile-first, location-aware garden planning web app that helps users generate a personalized garden plan based on growing region, garden areas, sunlight, soil/container type, plant preferences, local frost dates, and weather risk.
+
+3. Business problem
+Explain the problem:
+- beginner and casual gardeners often do not know what to plant
+- local growing seasons and frost dates are confusing
+- plant placement and timing are hard to plan
+- generic chatbot answers are not structured into an actionable garden map and calendar
+
+4. Target users
+Include:
+- beginner gardeners
+- homeowners with small yards
+- balcony/container gardeners
+- users in short-season growing regions
+- users who want vegetables, herbs, and flowers planned together
+
+5. Core MVP features
+List the implemented MVP features:
+- mobile-first responsive web app
+- location-aware growing region selection
+- Calgary as default demo region, with other Alberta regions selectable
+- imperial/metric unit support
+- multiple garden areas
+- sunlight-level definitions
+- photo scanner for sunlight and soil/container estimation, if available
+- vegetables, herbs, and flowers
+- Pick My Plants recommendations
+- manual plant selection
+- custom plant entry
+- deterministic fallback plan generation
+- garden map
+- plant table
+- weekly schedule/calendar
+- weather-risk card
+- alert settings
+- download plan
+- share plan
+- local/browser persistence, if implemented
+
+6. Technology stack
+Include:
+- Replit / Replit Agent
+- React
+- Vite
+- TypeScript
+- Tailwind CSS
+- Node.js / Express if used
+- OpenAI API if used
+- Open-Meteo if used
+- browser localStorage/sessionStorage if used
+
+7. AI-assisted development
+Explain that the app was built using AI-assisted development tools, with Replit Agent used for primary development and ChatGPT used for requirements refinement, prompt planning, QA prompts, and documentation support.
+
+Do not claim that AI wrote the app independently. Emphasize that the team reviewed, tested, revised, and directed the build.
+
+8. How GrowIt is different from a plain chatbot
+Add a section explaining that GrowIt goes beyond a generic ChatGPT prompt by combining:
+- structured questionnaire
+- location-specific frost dates
+- plant whitelist
+- garden-area constraints
+- deterministic fallback logic
+- visual garden map
+- week-by-week schedule
+- weather-risk advisory
+- download/share workflow
+
+9. How to run locally
+Include clear steps:
+- install dependencies
+- run development server
+- open local URL
+
+Use the actual commands from this project.
+
+10. Environment variables
+List required or optional environment variables without exposing secret values.
+
+Examples:
+- OPENAI_API_KEY, if used
+- any other backend secrets actually used
+
+Make clear that secrets should be stored in Replit Secrets or local environment variables and never committed to GitHub.
+
+11. Known limitations
+Include:
+- MVP is focused on Alberta/short-season demo regions
+- generated plans are educational planning support, not professional horticultural advice
+- photo scanner only estimates sunlight/soil conditions and does not diagnose pests or disease
+- custom plants may not have verified local growing rules
+- weather-risk advisory is short-term and should not replace local judgment
+- no authentication/payment/admin features in MVP
+
+12. Future enhancements
+Include:
+- broader Canadian growing regions
+- richer plant database
+- improved AI plan generation
+- Gemini/video garden walkthrough analysis as future scope
+- account saving
+- multi-season crop rotation
+- deeper companion planting education
+- nursery or seed supplier integrations
+- native mobile app if justified
+
+13. Course context
+Include:
+This project was developed for ENTI 633 — Generative AI and Prompting at the Haskayne School of Business, University of Calgary.
+
+14. License
+Add or update a LICENSE file using the MIT License unless a license already exists.
+
+15. Security check
+Before finishing:
+- confirm no API keys or secrets are included in README
+- confirm no API keys or secrets are committed in source files
+- confirm .env or secret files are ignored if present
+
+After updating the README and license, provide:
+- summary of documentation created/updated
+- local run commands
+- environment variables required
+- confirmation that no secrets were exposed
