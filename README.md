@@ -42,7 +42,7 @@ The MVP is anchored in Alberta (Zone 3–4a, with a 100–120 frost-free-day sea
 | Garden map | Colour-coded grid (green = vegetable, gold = herb, pink = flower) with per-cell detail panel showing spacing, action type, days to maturity, and care notes |
 | Week-by-week schedule | Collapsible timeline from first indoor seed start to last fall frost, with current-week highlight |
 | AI-enhanced plan | Optional AI layer (OpenAI-compatible) refines plant selection and adds growing notes; deterministic fallback on any failure |
-| Photo analyser | Upload a photo of your garden space; AI detects likely sunlight level and soil type to pre-fill the form |
+| Photo scanner | Inline within each garden area card — tap "Scan my garden photo" to upload a JPG or PNG. The photo appears immediately as a full-width preview; the AI then estimates sunlight level and soil/container type with high / medium / low confidence labels, pre-fills the form fields, and shows a "Photo analysis" result panel. If analysis fails, the photo stays visible and manual entry is unaffected. |
 | Weather risk card | Live 7-day forecast via Open-Meteo; surfaces frost risk, heat stress, heavy rain, and dry-spell advisories specific to your garden |
 | Resumable questionnaire | Back navigation moves one step at a time and preserves all answers; returning from the frost-confirmation screen restores Step 4 instead of restarting |
 | Alert preferences (preview) | Step 4 lets users preview which alerts they would like to receive; push notifications are scheduled for the next release |
@@ -124,7 +124,7 @@ A general-purpose chatbot can give useful gardening advice, but the answers are 
 | Visual garden map | A grid view per area, colour-coded by category, with per-cell plant detail panels — not a wall of text |
 | Week-by-week schedule | Frost-anchored timeline of "start indoors", "transplant", "direct sow", "harvest", and quiet weeks, with the current week highlighted |
 | Weather-risk advisory | Live Open-Meteo 7-day forecast classified into frost / heat / heavy-rain / dry-spell risks with concrete actions, falling back gracefully if the API is down |
-| Photo scanner | Optional photo upload that pre-fills sunlight and soil with confidence labels (high / medium / low) and prompts the user to confirm low-confidence values |
+| Photo scanner | Always-visible inline card within each garden area. Upload a photo → instant preview → AI analysis result panel with confidence labels → form fields pre-filled. No toggle or dropdown required. |
 | Download / share workflow | Markdown export and Web Share API (with clipboard fallback) so the plan goes from app to fridge to garden without re-typing |
 
 The result is a planning tool, not a conversation. The user gets a plan they can act on the same day, in the unit system they prefer, sized to their actual beds.
