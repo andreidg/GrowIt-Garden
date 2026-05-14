@@ -12,15 +12,19 @@ GrowIt is a free, account-optional web application that generates a personalised
 
 ## Business Problem
 
-Alberta's growing season is short (as few as 100–120 frost-free days), highly variable by location, and frequently misunderstood by home gardeners who rely on generic national advice. Planting even one or two weeks too early or too late can mean losing an entire crop. Existing gardening apps are designed for temperate North American climates and do not account for Alberta's Zone 3–4a conditions, city-level microclimates, or the practical reality that most home gardeners have never heard of a "last spring frost date." GrowIt solves this by making location-specific frost-date intelligence the foundation of every plan.
+Beginner and casual gardeners often don't know **what** to plant, **when** to plant it, or **where** to put it in their garden. Local growing seasons and frost dates are confusing — planting even one or two weeks too early or too late can mean losing an entire crop. Plant placement and timing are difficult to plan from scratch, and generic chatbot answers, while informative, are unstructured: they don't translate into an actionable garden map, a week-by-week schedule, or a downloadable plan you can take outside.
+
+The MVP is anchored in Alberta (Zone 3–4a, with a 100–120 frost-free-day season) because short-season growers feel this pain most acutely and existing gardening apps are designed for temperate climates. The same architecture is intended to expand to other short-season regions across Canada.
 
 ---
 
 ## Target Users
 
-- Alberta homeowners with a backyard garden bed, raised bed, container garden, or small urban plot
-- First-time or early-stage gardeners who want a structured, data-backed starting point
-- Experienced gardeners who want a companion-planting-aware layout and a downloadable schedule
+- **Beginner gardeners** who want a structured, data-backed starting point instead of a wall of forum advice
+- **Homeowners with small yards** who want a clear plan for one or two beds
+- **Balcony and container gardeners** who can pick "Container/Pots" as their soil type and still get a usable plan
+- **Users in short-season growing regions** (currently Alberta) where timing is the difference between a harvest and a loss
+- **Gardeners who want vegetables, herbs, and flowers planned together** in one map and one schedule, not three separate tools
 
 ---
 
@@ -28,7 +32,7 @@ Alberta's growing season is short (as few as 100–120 frost-free days), highly 
 
 | Feature | Details |
 |---|---|
-| Location selection | Six Alberta cities: Calgary, Edmonton, Red Deer, Airdrie, Cochrane, Okotoks — each with historical frost dates |
+| Location-aware setup | Six selectable Alberta growing regions, each with its own historical frost dates and zone. Calgary is the default demo region; users can switch to Edmonton, Red Deer, Airdrie, Cochrane, or Okotoks at any time. |
 | Multi-area garden setup | Up to five named garden beds with individual dimensions, sunlight level (5 options), and soil type |
 | Imperial / metric toggle | All dimensions entered and stored in feet internally; displayed in the user's preferred unit throughout |
 | Garden goal selection | Six goals (Beginner-friendly, Vegetable-focused, Herbs & Flowers, Pollinator-friendly, Family/Kid-friendly, Custom) that drive automatic plant recommendations |
@@ -71,28 +75,59 @@ Alberta's growing season is short (as few as 100–120 frost-free days), highly 
 | Logging | Pino |
 | Build | esbuild (CJS bundle) |
 
-### Infrastructure
+### Infrastructure & Tooling
 | Layer | Technology |
 |---|---|
+| Hosting & dev environment | Replit (workspace, workflows, secrets, deployment) |
+| AI development assistant | Replit Agent (primary build), ChatGPT (planning, prompts, QA) |
 | Monorepo | pnpm workspaces |
 | Reverse proxy | Replit path-based shared proxy |
 | Weather data | Open-Meteo (open, no API key required) |
-| AI inference | OpenAI-compatible API (Replit AI Integrations proxy) |
-| Auth | Replit Auth (optional sign-in via OpenID Connect) |
+| AI inference | OpenAI-compatible API via Replit AI Integrations proxy |
+| Persistence | Browser `localStorage` + `sessionStorage` (no account required) |
+| Auth | Replit Auth (optional, OpenID Connect) |
 
 ---
 
 ## How AI-Assisted Development Was Used
 
-GrowIt was built as a project for **ENTI 633 Generative AI and Prompting** at the Haskayne School of Business, University of Calgary. The entire codebase was produced through iterative prompting of a generative AI coding assistant (Replit Agent / GPT-4-class model). Key AI-assisted steps included:
+GrowIt was built using AI-assisted development tools, with a clear division of labour:
 
-1. **Architecture design** — prompting the AI to propose a monorepo structure, API contract-first workflow, and deterministic-first plan generation strategy before writing any code
-2. **Feature implementation** — describing each feature in plain language and having the AI generate TypeScript components, hooks, and route handlers
-3. **Debugging and refactoring** — providing error messages or screenshots to the AI and having it diagnose and fix issues
-4. **Data modelling** — AI-generated Zod schemas, Drizzle table definitions, and OpenAPI spec sections
-5. **Prompt engineering within the app** — designing the system and user prompts sent to the AI plan-generation route (`/api/ai-plan`) to elicit structured JSON responses that augment the deterministic plan
+- **Replit Agent** was the primary development tool, used to scaffold the monorepo, generate React components and Express routes, run typechecks, fix bugs, and apply iterative polish.
+- **ChatGPT** was used for upstream work: refining product requirements, planning prompt structures, drafting QA checklists, and producing this documentation.
 
-The project demonstrates that a non-engineer can use generative AI to ship a functional, multi-layer full-stack web application without writing raw code by hand.
+Importantly, **AI did not write the app independently**. The team reviewed every change, ran the app after each iteration, identified bugs and gaps, drafted explicit specs (e.g. for the photo scanner, plant rules, and weekly schedule), and directed the AI through targeted instructions. Each round followed a *spec → generate → review → test → revise* loop, and the team kept final authority on scope, copy, visual design, and what shipped.
+
+Specific AI-assisted activities included:
+
+1. **Architecture design** — proposing a monorepo structure, contract-first OpenAPI workflow, and deterministic-first plan generation strategy
+2. **Feature implementation** — generating TypeScript components, hooks, and route handlers from natural-language descriptions
+3. **Debugging** — diagnosing errors and stack traces against the actual codebase and proposing fixes
+4. **Data modelling** — drafting Zod schemas, Drizzle tables, and OpenAPI fragments
+5. **In-app prompt engineering** — designing the system/user prompts sent to the AI plan-generation and photo-analysis routes so they return structured JSON that the deterministic generator can augment safely
+
+The project demonstrates that, with disciplined prompting and human review, AI tooling can ship a full-stack web application end to end — *with* the team, not *instead of* it.
+
+---
+
+## How GrowIt Is Different From a Plain Chatbot
+
+A general-purpose chatbot can give useful gardening advice, but the answers are unstructured prose: a paragraph about tomatoes, a list of tips, no plan you can actually use outside. GrowIt turns the same underlying knowledge into a working planning tool by combining:
+
+| Layer | What GrowIt adds over a chatbot |
+|---|---|
+| Structured questionnaire | Captures region, units, garden areas, sunlight, soil, and plant preferences in a guided 4-step flow — no prompt engineering required |
+| Location-specific frost dates | Six Alberta cities with hardcoded last-spring / first-fall frost dates and climate zones drive every scheduling decision |
+| Curated plant whitelist | 34 region-vetted vegetables, herbs, and flowers with structured metadata (sunlight needs, spacing, days to maturity, indoor weeks ahead) instead of free-text plant names |
+| Garden-area constraints | Per-area dimensions, sunlight, soil type, and 20 ft / 6.1 m caps are enforced — the plan is sized to the user's actual space |
+| Deterministic fallback logic | Every plan is generated by a local algorithm first; AI augmentation is optional and never blocks a plan |
+| Visual garden map | A grid view per area, colour-coded by category, with per-cell plant detail panels — not a wall of text |
+| Week-by-week schedule | Frost-anchored timeline of "start indoors", "transplant", "direct sow", "harvest", and quiet weeks, with the current week highlighted |
+| Weather-risk advisory | Live Open-Meteo 7-day forecast classified into frost / heat / heavy-rain / dry-spell risks with concrete actions, falling back gracefully if the API is down |
+| Photo scanner | Optional photo upload that pre-fills sunlight and soil with confidence labels (high / medium / low) and prompts the user to confirm low-confidence values |
+| Download / share workflow | Markdown export and Web Share API (with clipboard fallback) so the plan goes from app to fridge to garden without re-typing |
+
+The result is a planning tool, not a conversation. The user gets a plan they can act on the same day, in the unit system they prefer, sized to their actual beds.
 
 ---
 
@@ -235,8 +270,10 @@ Create a `.env` file in the workspace root (never commit it). Example:
 ```
 SESSION_SECRET=replace-with-a-long-random-string
 DATABASE_URL=postgres://postgres:password@localhost:5432/growit
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=your-openai-api-key-here
 ```
+
+> **Security:** Never commit `.env` files, real API keys, or session secrets to GitHub. On Replit, store secrets in the **Secrets** panel; locally, use a `.env` file that is excluded by `.gitignore` (see this repo's `.gitignore` for the pattern).
 
 ---
 
@@ -253,21 +290,28 @@ OPENAI_API_KEY=sk-...
 - **Alert preferences are a preview feature** — Step 4 of the questionnaire collects alert preferences (frost warnings, hail alerts, planting reminders, watering days) and a preferred notification time, but no push-notification or email service is wired up yet. The screen is clearly labelled "Coming soon" and the preferences are not persisted between sessions.
 - **Plants Timeline temporarily hidden** — The timeline view on the Plants tab is hidden in this build because the bar-rendering data is incomplete. The plant list, care notes, and schedule view remain fully functional.
 - **Companion conflict warnings are intentionally suppressed** — Companion-planting rules still inform internal plant placement, but per the MVP design no warning badges, conflict notices, or "incompatible neighbour" text are surfaced to the user.
+- **Educational planning support, not professional advice** — GrowIt is designed as a planning aid for home gardeners. It does not replace local horticultural expertise, soil testing, or guidance from a master gardener.
+- **Photo scanner does not diagnose pests or disease** — It only estimates sunlight level and soil/container type. It will not identify plant pests, fungal disease, nutrient deficiency, or any other plant-health issue.
+- **Custom plants may not have verified local growing rules** — Plants added via the custom-entry field do not go through the regional whitelist, so their fit with the selected region, sunlight, and frost window is not validated.
+- **Weather-risk advisory is short-term** — The card surfaces the next 7 days only and should not replace local judgement about long-range conditions.
+- **No authentication, payment, or admin features in the MVP** — There is no login, no premium tier, no e-commerce, no analytics, and no admin dashboard. Replit Auth is wired as an optional sign-in but is not used to gate any feature.
 
 ---
 
 ## Future Enhancements
 
-- **More Alberta regions** — Lethbridge, Medicine Hat, Grande Prairie, Fort McMurray, and rural zones
-- **User accounts with cloud sync** — Save and share multiple plans across devices
-- **Planting reminders** — Push notifications or email reminders keyed to the schedule (requires accounts)
-- **Succession planting** — Generate staggered planting dates for continuous harvest of quick-maturing crops
-- **Seed inventory tracking** — Log which seeds you have on hand and generate a shopping list for gaps
-- **Alberta Garden Network integration** — Pull community frost reports to calibrate dates in real time
-- **Soil testing integration** — Connect to Alberta Agriculture soil database for more precise soil classification
-- **Year-over-year journaling** — Photograph plant progress week by week and build a garden history
-- **Native plant support** — Extend the flower database with Alberta native species for pollinator corridors
-- **Full PWA** — Service worker + offline mode so the plan is accessible without internet at the garden centre
+- **Broader Canadian growing regions** — Expand beyond Alberta to other short-season provinces (Saskatchewan, Manitoba, Quebec interior, Atlantic Canada), and eventually US zones with similar climate profiles
+- **Richer plant database** — Significantly more vegetables, herbs, flowers, native species, and small fruits, with deeper region-by-region suitability data
+- **Improved AI plan generation** — Better prompt structure, model choice, and validation so the AI layer adds more reliable growing notes and per-plant care guidance
+- **Gemini / video garden walkthrough analysis** — Allow users to upload a short video walk-through of their yard so the system can identify multiple zones (sun pockets, shade, slope) instead of one photo at a time
+- **Account saving** — Optional cloud sync so users can save and restore multiple plans across devices
+- **Multi-season crop rotation** — Plan year 2 and year 3 layouts that rotate plant families to maintain soil health
+- **Deeper companion-planting education** — Surface the "why" behind plant pairings (pest deterrence, pollinator support, nutrient balance) as opt-in learning content
+- **Nursery / seed supplier integrations** — Direct links to local suppliers for the plants in the plan, with availability and seed-vs-transplant filters
+- **Push notifications and email reminders** — Tie the existing alert preferences to a real notification service
+- **Succession planting** — Staggered planting dates for continuous harvest of quick-maturing crops
+- **Native mobile app** — A React Native / Expo build if usage justifies it, with offline mode so the plan is usable at the garden without internet
+- **Year-over-year journaling** — Weekly photo progress and a personal garden history
 
 ---
 
