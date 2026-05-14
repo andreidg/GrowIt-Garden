@@ -1,0 +1,128 @@
+Update the Download Plan button in the Garden Plan header so it exports a professionally formatted PDF instead of a Markdown file.
+
+Do not rebuild the app from scratch. This is a targeted export/download improvement.
+
+Current issue:
+- The Download Plan button currently exports a Markdown file.
+- We now want the button to generate and download a clean, polished PDF document.
+
+Goal:
+- The generated PDF should look like a professional GrowIt garden plan report.
+- It should visually match the app’s design, including layout, fonts, colors, spacing, and section hierarchy.
+- It should have proper margins and clean page breaks.
+- Content such as schedule cards should not be cut off awkwardly across pages.
+
+Implementation requirements:
+
+1. Choose the best PDF approach for the current stack
+- Review the current React/Vite/TypeScript app structure.
+- Choose a PDF generation approach that fits naturally with the existing stack.
+- Acceptable approaches may include:
+  - html2pdf.js
+  - jsPDF + html2canvas
+  - browser print-to-PDF with a dedicated PDF/export layout
+  - another lightweight library if it is more appropriate
+- Prefer the simplest reliable approach that works well in Replit and does not require heavy backend rendering.
+- Do not introduce a complex server-side PDF system unless absolutely necessary.
+
+2. Download Plan button behaviour
+- Keep the button label as “Download Plan” unless there is already a better label.
+- Clicking the button should generate and download a PDF file.
+- File name should be user-friendly, for example:
+  GrowIt_Garden_Plan_[Region]_[Date].pdf
+- Do not download Markdown anymore from this button.
+
+3. PDF content requirements
+The PDF should include:
+- GrowIt title / header
+- selected growing region
+- unit system
+- garden area summary
+- selected plants grouped by category
+- garden map or garden map summary
+- plant table / plant list
+- weekly schedule
+- weather-risk notes if available
+- custom plants if included
+- generation date
+
+4. PDF visual design
+- Use the GrowIt visual identity:
+  - forest green
+  - warm brown
+  - cream / beige background
+  - natural accent colors for vegetables, herbs, flowers, and foliage/ornamental plants
+- Use clean typography and readable font sizes.
+- Use section headings.
+- Use card-like sections where appropriate.
+- Use proper spacing between sections.
+- Avoid clutter.
+- Avoid tiny text.
+- PDF should look like something a user could save, print, or share.
+
+5. Page layout and page breaks
+- Use proper margins on all pages.
+- Avoid content being cut off at page boundaries.
+- Schedule cards should break cleanly across pages.
+- Plant cards or schedule sections should avoid being split awkwardly.
+- If needed, use CSS such as:
+  - break-inside: avoid
+  - page-break-inside: avoid
+  - margin
+  - padding
+  - print-specific layout classes
+- Ensure long schedules continue neatly onto additional pages.
+
+6. Garden map handling
+- If the visual garden map can be included reliably, include it in the PDF.
+- If the map is too complex to render cleanly, include a simplified map summary or area-by-area plant placement summary.
+- Do not let the PDF export fail because the map is complex.
+- The PDF should still be useful even if the map is simplified.
+
+7. Mobile and browser compatibility
+- The PDF export should work from the deployed Replit app.
+- It should work on desktop browsers.
+- If mobile PDF export has limitations, handle gracefully and do not break the app.
+- Show a loading state while the PDF is being generated if generation takes more than a moment.
+
+8. Error handling
+If PDF generation fails:
+- Show a friendly message:
+  “PDF download is unavailable right now. Please try again.”
+- Do not crash the app.
+- Do not clear the user’s generated plan.
+
+9. Preserve Share Plan functionality
+- Do not remove or break the Share Plan button.
+- Share Plan can continue using Web Share API / clipboard fallback.
+- Only change the Download Plan output from Markdown to PDF.
+
+10. Preserve existing app features
+Do not break:
+- garden setup
+- photo scanner
+- plant recommendations
+- custom plants
+- multiple garden areas
+- imperial/metric conversion
+- garden map
+- plant table
+- weekly schedule
+- weather-risk card
+- alert toggles
+- local storage
+- share button
+
+11. Final QA
+After implementation, test and confirm:
+- Download Plan generates a PDF, not Markdown.
+- PDF file opens successfully.
+- PDF filename is user-friendly.
+- PDF includes the main garden plan content.
+- PDF styling matches GrowIt branding.
+- PDF has proper margins.
+- Schedule cards do not get cut off awkwardly.
+- Multiple pages render cleanly if needed.
+- Share Plan still works.
+- App still runs without errors.
+- No new major features were added.
