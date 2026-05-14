@@ -1,0 +1,104 @@
+Debug and restore the Step 2 “My Garden Photo Scanner” UI.
+
+Current issue:
+- On Step 2, the scanner opens and shows the “Scan my garden photo” upload box.
+- When I upload a garden photo, the photo does not appear inside the scanner card/window anymore.
+- In a previous version, the uploaded photo appeared in the scanner window and a small analysis dropdown/panel appeared showing the predicted sunlight and soil/container type.
+- I want that behaviour restored.
+
+Do not rebuild the app from scratch. Fix only the Step 2 photo scanner upload, preview, and analysis UI.
+
+Required behaviour:
+
+1. Photo preview inside scanner window
+- After the user uploads a JPG or PNG image, display the uploaded photo inside the Step 2 scanner card.
+- The preview should appear immediately after upload, even before analysis finishes.
+- The image should be contained inside the scanner card and should not overflow.
+- Use object-fit: cover or object-fit: contain.
+- The preview should work on mobile and desktop.
+- If the image cannot render, show the uploaded filename instead.
+
+2. Scanner card layout
+- Keep the existing scanner card style.
+- Replace or update the dashed upload box after upload so the user can see:
+  - uploaded image preview
+  - filename or “Change photo” option
+  - analysis status
+- Do not leave the scanner visually unchanged after upload.
+
+3. Analysis loading state
+- After upload, show:
+  “Analyzing your garden photo...”
+- This should appear inside the scanner card, near or below the image preview.
+
+4. Restore analysis dropdown/panel
+- After analysis completes, show a small expandable dropdown, panel, or result card below the uploaded image preview.
+- The panel title should be:
+  “Photo analysis”
+- The panel should show:
+  - Sunlight: [predicted value] — [High/Medium/Low] confidence
+  - Soil: [predicted value] — [High/Medium/Low] confidence
+  - optional note if available
+- Example:
+  “Sunlight: Part sun — Medium confidence”
+  “Soil: Raised Bed — High confidence”
+  “Please confirm or adjust these values before continuing.”
+
+5. Pre-fill existing Step 2 fields
+- The photo analysis must update the existing Step 2 form fields:
+  - sunlight level
+  - soil/container type
+- The selected values should visibly update in the form controls.
+- The user must still be able to manually edit these values after analysis.
+- If confidence is Low, show a note beside that field:
+  “Please confirm or adjust this value.”
+
+6. Match current app options exactly
+Sunlight prediction must map to one of:
+- Full sun
+- Part sun
+- Part shade
+- Full shade
+- Dappled shade
+
+Soil/container prediction must map to one of:
+- Raised Bed
+- In-Ground Clay
+- In-Ground Loam
+- Container/Pots
+
+7. Failure handling
+If photo analysis fails or no API key is available:
+- Still show the uploaded photo preview.
+- Show this friendly message:
+  “Photo analysis is unavailable right now. You can still enter your garden details manually.”
+- Do not clear the uploaded image.
+- Do not clear any manually entered fields.
+- Do not block the user from continuing.
+
+8. Scope limits
+The photo scanner should only estimate:
+- sunlight level
+- soil/container type
+- optional general garden condition note
+
+Do not estimate:
+- garden dimensions
+- pests
+- plant disease
+- exact plant identification
+- property/location
+
+9. Final QA after fix
+After implementation, confirm:
+- Uploading a photo shows the image inside the scanner window.
+- The image stays contained and responsive.
+- The analysis/loading state appears.
+- The analysis dropdown/panel appears after processing.
+- Sunlight field updates correctly.
+- Soil/container field updates correctly.
+- Confidence labels appear.
+- Low-confidence values ask user to confirm.
+- Manual edits still work after photo analysis.
+- If analysis fails, the uploaded photo still appears and the manual form still works.
+- App still runs without errors.

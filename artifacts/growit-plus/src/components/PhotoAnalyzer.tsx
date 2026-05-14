@@ -1,21 +1,21 @@
 /**
- * PhotoAnalyzer — optional garden photo scan for step 3 of the questionnaire.
+ * PhotoAnalyzer — optional garden photo scan for step 2 of the questionnaire.
  *
  * States:
- *   idle      → prompt card with camera icon
- *   loading   → spinner while compressing / calling API
- *   done      → thumbnail + estimated values with confidence badges
- *   error     → friendly message with retry or skip
+ *   idle        → prompt card with camera icon
+ *   loading     → photo preview + spinner while compressing / calling API
+ *   done        → photo preview + analysis panel with estimated values
+ *   error       → photo preview (if available) + friendly error + retry
  *   unavailable → backend has no vision key; component renders nothing
  *
- * The component only renders the scan CTA. It never blocks the user from
- * filling in sunlight and soil type manually.
+ * The component only estimates sunlight and soil type. It never blocks the
+ * user from filling in values manually.
  */
 
 import { useState, useEffect, useRef } from "react";
 import type { SunlightLevel, SoilType } from "@/types/garden";
 import { compressImage } from "@/utils/compressImage";
-import { Camera, Loader, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Camera, Loader, CheckCircle, AlertCircle, X, RefreshCw } from "lucide-react";
 
 export type Confidence = "high" | "medium" | "low";
 
@@ -46,10 +46,11 @@ const CONFIDENCE_LABEL: Record<Confidence, string> = {
 };
 
 export default function PhotoAnalyzer({ onResult }: PhotoAnalyzerProps) {
-  const [state,  setState]  = useState<State>("checking");
-  const [error,  setError]  = useState<string>("");
-  const [result, setResult] = useState<PhotoAnalysisResult | null>(null);
-  const [thumb,  setThumb]  = useState<string>("");
+  const [state,    setState]    = useState<State>("checking");
+  const [error,    setError]    = useState<string>("");
+  const [result,   setResult]   = useState<PhotoAnalysisResult | null>(null);
+  const [thumb,    setThumb]    = useState<string>("");
+  const [filename, setFilename] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // ── Check if backend vision is available ─────────────────────────────
@@ -64,23 +65,26 @@ export default function PhotoAnalyzer({ onResult }: PhotoAnalyzerProps) {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Hidden file input handler ─────────────────────────────────────────
+  // ── File input handler ────────────────────────────────────────────────
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate type
     if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
       setState("error");
       setError("Please upload a JPG or PNG photo.");
       return;
     }
 
+    // Show the photo immediately before analysis starts
+    const objectUrl = URL.createObjectURL(file);
+    setThumb(objectUrl);
+    setFilename(file.name);
     setState("loading");
     setError("");
+    setResult(null);
 
     try {
-      // Client-side compress
       const { base64, compressedBytes } = await compressImage(file, 800, 0.72);
 
       if (compressedBytes > 400_000) {
@@ -89,10 +93,10 @@ export default function PhotoAnalyzer({ onResult }: PhotoAnalyzerProps) {
         return;
       }
 
-      // Preview thumbnail
+      // Update thumb to the compressed base64 version (stable after object URL is revoked)
       setThumb(`data:image/jpeg;base64,${base64}`);
+      URL.revokeObjectURL(objectUrl);
 
-      // Call backend
       const res  = await fetch("/api/analyze-photo", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,25 +138,21 @@ export default function PhotoAnalyzer({ onResult }: PhotoAnalyzerProps) {
       setError("Could not reach the analysis service. You can still fill in details manually.");
     }
 
-    // Reset input so the same file can be re-selected
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const openPicker = () => inputRef.current?.click();
-
-  const handleDismiss = () => {
+  const openPicker   = () => inputRef.current?.click();
+  const handleReset  = () => {
     setState("idle");
     setResult(null);
     setThumb("");
+    setFilename("");
+    setError("");
   };
 
   // ── Render ────────────────────────────────────────────────────────────
-
-  // Nothing to show — no key configured
   if (state === "unavailable") return null;
-
-  // Checking availability — render nothing to avoid flash
-  if (state === "checking") return null;
+  if (state === "checking")    return null;
 
   return (
     <div data-testid="photo-analyzer">
@@ -189,100 +189,157 @@ export default function PhotoAnalyzer({ onResult }: PhotoAnalyzerProps) {
         </button>
       )}
 
-      {/* ── LOADING ── */}
+      {/* ── LOADING: photo preview + spinner ── */}
       {state === "loading" && (
-        <div className="w-full flex items-center gap-4 p-4 rounded-2xl border border-forest/15 bg-forest/5">
-          <Loader className="w-5 h-5 text-forest/50 animate-spin shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-forest/70">Analysing photo…</p>
-            <p className="text-xs text-forest/40 mt-0.5">Compressing and reading garden conditions</p>
+        <div className="rounded-2xl border border-forest/15 bg-forest/5 overflow-hidden">
+          {/* Photo preview */}
+          {thumb ? (
+            <div className="w-full aspect-video bg-forest/8 overflow-hidden">
+              <img
+                src={thumb}
+                alt="Uploaded garden photo"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : null}
+
+          {/* Loading indicator */}
+          <div className="flex items-center gap-3 px-4 py-3">
+            <Loader className="w-4 h-4 text-forest/50 animate-spin shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-forest/70">Analyzing your garden photo…</p>
+              <p className="text-xs text-forest/40 mt-0.5 truncate">
+                {filename || "Compressing and reading garden conditions"}
+              </p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── DONE: show thumbnail + estimates ── */}
+      {/* ── DONE: photo preview + analysis panel ── */}
       {state === "done" && result && (
         <div className="rounded-2xl border border-forest/15 bg-forest/5 overflow-hidden">
-          {/* Header row */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-forest/10">
-            {thumb && (
+          {/* Photo preview */}
+          {thumb ? (
+            <div className="w-full aspect-video bg-forest/8 overflow-hidden relative">
               <img
                 src={thumb}
-                alt="Garden preview"
-                className="w-10 h-10 rounded-lg object-cover shrink-0"
+                alt="Uploaded garden photo"
+                className="w-full h-full object-cover"
               />
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle className="w-3.5 h-3.5 text-forest/60 shrink-0" />
-                <p className="text-xs font-semibold text-forest/60 uppercase tracking-wider">
-                  Photo scan complete
-                </p>
-              </div>
-              <p className="text-xs text-forest/45 mt-0.5 leading-snug">
-                Pre-filled below — review and adjust if needed
-              </p>
+              {/* Dismiss button overlaid on photo */}
+              <button
+                type="button"
+                onClick={handleReset}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
+                aria-label="Remove photo and reset"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
+          ) : null}
+
+          {/* Change photo row */}
+          <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-1">
+            <p className="text-[10px] text-forest/40 truncate min-w-0">{filename}</p>
             <button
               type="button"
-              onClick={handleDismiss}
-              className="p-1.5 rounded-full hover:bg-forest/10 text-forest/40 transition-colors shrink-0"
-              aria-label="Dismiss photo scan"
+              onClick={openPicker}
+              className="flex items-center gap-1 text-[10px] font-semibold text-forest/50 hover:text-forest/70 shrink-0 transition-colors"
             >
-              <X className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3 h-3" />
+              Change photo
             </button>
           </div>
 
-          {/* Estimates */}
-          <div className="px-4 py-3 space-y-2">
-            <EstimateRow
-              label="Sun Exposure"
-              value={result.sunlight}
-              confidence={result.sunlightConfidence}
-            />
-            <EstimateRow
-              label="Soil Type"
-              value={result.soilType}
-              confidence={result.soilTypeConfidence}
-            />
-          </div>
-
-          {/* Condition notes */}
-          {result.conditionNotes.length > 0 && (
-            <div className="px-4 pb-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-forest/40 mb-1.5">
-                Observed Conditions
+          {/* Analysis panel */}
+          <div className="px-4 pt-2 pb-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <CheckCircle className="w-3.5 h-3.5 text-forest/60 shrink-0" />
+              <p className="text-xs font-semibold text-forest/60 uppercase tracking-wider">
+                Photo analysis
               </p>
-              <ul className="space-y-1">
-                {result.conditionNotes.map((note, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className="text-forest/30 text-xs mt-0.5 shrink-0">›</span>
-                    <span className="text-xs text-forest/65 leading-snug">{note}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
-          )}
+
+            <div className="space-y-2.5">
+              <EstimateRow
+                label="Sunlight"
+                value={result.sunlight}
+                confidence={result.sunlightConfidence}
+              />
+              <EstimateRow
+                label="Soil"
+                value={result.soilType}
+                confidence={result.soilTypeConfidence}
+              />
+            </div>
+
+            {/* Condition notes */}
+            {result.conditionNotes.length > 0 && (
+              <div className="mt-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-forest/40 mb-1.5">
+                  Observed Conditions
+                </p>
+                <ul className="space-y-1">
+                  {result.conditionNotes.map((note, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-forest/30 text-xs mt-0.5 shrink-0">›</span>
+                      <span className="text-xs text-forest/65 leading-snug">{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Confirm note */}
+            <p className="mt-3 text-[11px] text-forest/50 leading-snug">
+              Values pre-filled below — please confirm or adjust before continuing.
+            </p>
+          </div>
         </div>
       )}
 
-      {/* ── ERROR ── */}
+      {/* ── ERROR: photo preview (if any) + message + retry ── */}
       {state === "error" && (
-        <div className="rounded-2xl border border-terracotta/20 bg-terracotta/8 p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-terracotta">Photo scan unavailable</p>
-              <p className="text-xs text-terracotta/75 mt-1 leading-snug">{error}</p>
+        <div className="rounded-2xl border border-terracotta/20 bg-terracotta/5 overflow-hidden">
+          {/* Keep the photo visible even on error */}
+          {thumb ? (
+            <div className="w-full aspect-video bg-forest/8 overflow-hidden">
+              <img
+                src={thumb}
+                alt="Uploaded garden photo"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : null}
+
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-terracotta">Photo analysis unavailable</p>
+                <p className="text-xs text-terracotta/75 mt-1 leading-snug">
+                  {error || "Photo analysis is unavailable right now. You can still enter your garden details manually."}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 mt-3">
+              <button
+                type="button"
+                onClick={openPicker}
+                className="text-xs font-semibold text-terracotta/80 underline underline-offset-2"
+              >
+                Try a different photo
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-xs font-semibold text-forest/50 underline underline-offset-2"
+              >
+                Dismiss
+              </button>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setState("idle")}
-            className="mt-3 text-xs font-semibold text-terracotta/80 underline underline-offset-2"
-          >
-            Try again
-          </button>
         </div>
       )}
     </div>
@@ -300,9 +357,9 @@ function EstimateRow({
   confidence: Confidence;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center justify-between gap-2 flex-wrap">
       <span className="text-xs text-forest/50 shrink-0">{label}:</span>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-xs font-semibold text-forest">{value}</span>
         <span
           className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${CONFIDENCE_STYLE[confidence]}`}
