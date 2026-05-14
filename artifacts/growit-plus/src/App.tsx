@@ -12,6 +12,7 @@ type Step = "landing" | "questionnaire" | "frost-confirm" | "plan";
 
 export default function App() {
   const [step, setStep]           = useState<Step>("landing");
+  const [qInitialStep, setQInitialStep] = useState(1);
   const [profile, setProfile]     = useState<GardenProfile | null>(null);
   const [plan, setPlan]           = useState<GeneratedPlan | null>(null);
   const [hasSavedPlan, setHasSavedPlan] = useState(false);
@@ -78,8 +79,9 @@ export default function App() {
 
           {step === "questionnaire" && (
             <QuestionnairePage
-              onNext={p => { setProfile(p); setStep("frost-confirm"); }}
-              onBack={() => setStep("landing")}
+              initialStep={qInitialStep}
+              onNext={p => { setProfile(p); setQInitialStep(1); setStep("frost-confirm"); }}
+              onBack={() => { setQInitialStep(1); setStep("landing"); }}
             />
           )}
 
@@ -87,7 +89,7 @@ export default function App() {
             <FrostConfirmPage
               profile={profile}
               onConfirm={generatedPlan => { setPlan(generatedPlan); setStep("plan"); }}
-              onBack={() => setStep("questionnaire")}
+              onBack={() => { setQInitialStep(4); setStep("questionnaire"); }}
             />
           )}
 

@@ -9,6 +9,7 @@ import PhotoAnalyzer, { ConfidenceBadge, type Confidence } from "@/components/Ph
 interface QuestionnairePageProps {
   onNext: (profile: GardenProfile) => void;
   onBack: () => void;
+  initialStep?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,10 +174,10 @@ function valToDisplay(ft: number, unit: UnitSystem): string {
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageProps) {
+export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: QuestionnairePageProps) {
 
   // ── Navigation ──────────────────────────────────────────────────────────
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(initialStep);
 
   // ── Step 1 ───────────────────────────────────────────────────────────────
   const [region,      setRegion]      = useState("Calgary");
