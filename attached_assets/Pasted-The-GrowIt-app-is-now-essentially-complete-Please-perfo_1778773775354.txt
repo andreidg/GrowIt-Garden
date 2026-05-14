@@ -1,0 +1,319 @@
+The GrowIt app is now essentially complete. Please perform a full QA review of the entire application before final polish and submission.
+
+Do not rebuild the app from scratch. Do not add new major features unless needed to fix a bug or complete an already-existing feature.
+
+Do not add:
+- authentication
+- payments
+- Supabase
+- Mixpanel
+- premium enforcement
+- live chat
+- Gemini video
+- pest diagnosis
+- e-commerce
+- admin dashboard
+
+Your task is to audit the current app, identify bugs or gaps, and fix them carefully.
+
+QA areas to check:
+
+1. App branding
+- App name should be “GrowIt” everywhere, not “GrowIt+.”
+- Browser title, landing page, headers, buttons, README, and visible copy should use “GrowIt.”
+- The app should not be branded as Calgary-only.
+- Calgary can remain the default demo location, but other growing regions must be selectable.
+
+2. Full user flow
+Test the complete user journey:
+- landing page
+- start planning
+- garden setup
+- photo scanner
+- growing region selection
+- unit selection
+- garden area setup
+- plant preference / plant selection
+- “Pick My Plants” recommendation buttons
+- custom plant entry
+- generated plan
+- garden map
+- plant table
+- weekly schedule/calendar
+- weather-risk card
+- alert settings
+- download/share
+
+Fix any broken step or navigation issue.
+
+3. Mobile-first responsiveness
+Check the app at common mobile widths:
+- 390px
+- 430px
+- tablet width
+- desktop width
+
+Confirm:
+- no content is cut off
+- no accidental horizontal overflow except where intentionally scrollable
+- buttons are large enough to tap
+- cards stack correctly
+- plant table fits or converts to mobile cards
+- garden map remains usable
+- text remains readable
+
+4. Garden setup and units
+Check:
+- imperial and metric unit selection works
+- garden dimensions convert correctly
+- 20ft x 20ft cap works in imperial
+- approximately 6.1m x 6.1m cap works in metric
+- cap notice appears when needed:
+  “GrowIt supports gardens up to 20ft x 20ft. Your dimensions have been adjusted.”
+- dimensions are not lost or corrupted when switching units
+
+5. Multiple garden areas
+Check:
+- user can add multiple garden areas
+- each area can have a name
+- each area has dimensions
+- each area has sunlight level
+- each area has soil/container type
+- generated plan clearly separates or identifies areas
+- weekly schedule actions identify which area they apply to
+- multiple areas do not break map rendering or schedule generation
+
+6. Sunlight levels and info tooltips
+Check that the app supports:
+- Full sun
+- Part sun
+- Part shade
+- Full shade
+- Dappled shade
+
+Each option should have a working info tooltip or explanatory text.
+
+Use these definitions:
+- Full sun: The area gets 6+ hours of direct sunlight per day. Best for most vegetables, herbs, and sun-loving flowers.
+- Part sun: The area gets 4–6 hours of direct sunlight per day. Often works well for plants that like the sun but may need protection from intense afternoon heat.
+- Part shade: The area gets 2–4 hours of direct sunlight per day, or filtered light for much of the day. Good for plants that prefer some sun but not full exposure.
+- Full shade: The area gets less than 2 hours of direct sunlight per day. This does not mean total darkness; it still needs bright, indirect outdoor light.
+- Dappled shade: Sunlight is filtered through trees or structures, creating shifting patches of light and shade. Common under trees or near fences/pergolas.
+
+7. Photo scanner
+Check the Step 2 “My Garden photo scanner.”
+
+Required behaviour:
+- image upload visibly works
+- uploaded image preview or filename appears
+- analysis/loading state appears
+- sunlight field updates after analysis
+- soil/container field updates after analysis
+- confidence labels appear for sunlight and soil:
+  - High
+  - Medium
+  - Low
+- low-confidence values ask the user to confirm or adjust
+- manual edits still work after analysis
+- user can skip photo upload and continue manually
+- if analysis fails, show:
+  “Photo analysis is unavailable right now. You can still enter your garden details manually.”
+- do not estimate dimensions from the photo
+- do not diagnose pests or disease
+
+8. Plant selection and recommendations
+Check:
+- vegetables, herbs, and flowers are supported
+- plant items display one per row or as clear selectable cards
+- multi-select works
+- manual selection works
+- custom plant entry works
+- custom plants are marked as custom entries
+- unsupported custom plants do not break the plan
+- each category has a working “Pick My Plants” button:
+  - Vegetables
+  - Herbs
+  - Flowers
+- “Pick My Plants” recommends suitable plants based on:
+  - growing region
+  - frost dates
+  - garden area size
+  - sunlight level
+  - soil/container type
+  - selected garden goal/type
+  - available space
+- users can edit recommendations after they are selected
+- selected plants are treated as preferences, not guaranteed placements when conditions are unsuitable
+
+9. Generated garden plan
+Check:
+- plan generation works without requiring OpenAI
+- deterministic fallback works
+- plan includes vegetables, herbs, and flowers when selected
+- generated output includes:
+  - plant list
+  - garden map
+  - plant table
+  - weekly schedule
+  - local timing explanation
+  - weather-risk notes if implemented
+- plan generation does not crash with:
+  - small gardens
+  - metric units
+  - flowers-only plans
+  - multiple garden areas
+  - custom plants
+  - full shade
+  - container gardens
+
+10. Garden map
+Check:
+- garden map renders correctly
+- plant cells show only:
+  - emoji/icon
+  - abbreviated plant name
+  - category styling
+- remove all visible companion conflict warnings
+- remove “Companion Planting Notice”
+- remove warning icons from plant cells
+- plant details should not mention:
+  - incompatible neighbours
+  - conflicts
+  - avoid plants
+  - bad neighbour warnings
+- map remains mobile friendly
+- map does not overflow badly
+- tap/click details work if implemented
+
+11. Plant table under Garden Map
+Check:
+- table fits on screen
+- mobile layout works
+- if needed, table converts to stacked cards
+- no unreadable tiny text
+- no uncontrolled horizontal overflow
+- shows useful information:
+  - plant name
+  - category
+  - garden area
+  - action type
+  - spacing or notes
+
+12. Weekly schedule / calendar
+The calendar was working well, so preserve it.
+
+Check:
+- schedule still works
+- all weeks show correctly
+- current week is highlighted
+- schedule includes action types:
+  - start indoors
+  - direct sow
+  - buy as transplant
+  - transplant outdoors
+  - maintenance
+  - bloom/watch
+- weeks with no action show:
+  “No actions this week — just water and watch!”
+- schedule works for vegetables, herbs, and flowers
+- schedule works with multiple garden areas
+- schedule works in mobile view
+
+13. Weather-risk card
+Check:
+- weather-risk card works if implemented
+- Open-Meteo call works if backend route is used
+- if weather API fails, show:
+  “Live weather is unavailable right now. Your plan still uses local frost-date guidance.”
+- weather is advisory only
+- weather does not block plan generation
+- static frost-date table remains the main planning baseline
+
+14. Alert settings toggles
+Check alert toggles:
+- Frost Warnings
+- Hail Alerts
+- Planting Reminders
+- Watering Days
+
+Fix if needed:
+- toggles must work
+- off state moves knob left
+- on state moves knob right
+- knob stays inside the rounded track
+- entire toggle is clickable/tappable
+- mobile touch works
+
+15. Download and share
+Check:
+- print button has been removed from prominent UI
+- Download Plan button works
+- downloaded file is readable
+- Share Plan button works
+- Web Share API is used when supported
+- if Web Share API is not supported, fallback copies summary to clipboard
+- show:
+  “Plan summary copied to clipboard.”
+- no social platform-specific integrations are needed
+
+16. Landing page and logo
+Check:
+- logo/wordmark is clearly visible
+- no transparent logo disappears into the background
+- landing page looks polished and mobile-first
+- CTA is clear
+- product positioning is location-aware, not Calgary-only
+
+17. Errors and edge cases
+Check:
+- app does not crash on missing inputs
+- validation messages are clear
+- user can recover from errors
+- no blank screens
+- no console errors during normal use
+- no broken buttons
+- no dead links
+- no layout-breaking long text
+- no secrets/API keys exposed in frontend
+
+18. Code and file quality
+Check:
+- code is reasonably organized
+- data is separated where practical:
+  - growing region frost dates
+  - plant/flower whitelist
+  - plan generation logic
+  - unit conversion
+  - storage helpers
+- remove unused code if safe
+- remove unused imports
+- keep comments where logic needs explanation
+- do not commit secrets
+
+19. Final QA output
+Before making fixes, provide a concise QA checklist with:
+- Pass
+- Fail
+- Needs review
+
+Then fix all clear fail items.
+
+After fixes, provide a final checklist confirming:
+- app runs without errors
+- GrowIt branding is consistent
+- mobile-first layout works
+- location-aware setup works
+- photo scanner works or fails gracefully
+- plant recommendations work
+- custom plants work
+- multiple garden areas work
+- imperial/metric conversion works
+- garden map works
+- plant table fits mobile
+- companion conflict warnings are removed
+- weekly schedule works
+- weather card works or fails gracefully
+- alert toggles work
+- download/share works
+- no out-of-scope features were added
+- app is ready for final presentation polish

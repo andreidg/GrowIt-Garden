@@ -141,7 +141,7 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
                   <span className="text-xs font-semibold text-forest/40 w-[90px] shrink-0">
                     {week.weekLabel}
                   </span>
-                  <span className="text-xs text-forest/35 italic">Water and watch</span>
+                  <span className="text-xs text-forest/35 italic">No actions this week — just water and watch!</span>
                 </div>
               )}
 
@@ -217,7 +217,7 @@ export default function WeeklySchedule({ weeks }: WeeklyScheduleProps) {
                       ) : (
                         <div className="flex items-center gap-2 py-1">
                           <Droplets className="w-4 h-4 text-cream/50 shrink-0" />
-                          <p className="text-sm italic text-cream/70">No actions — water and watch!</p>
+                          <p className="text-sm italic text-cream/70">No actions this week — just water and watch!</p>
                         </div>
                       )}
                     </div>

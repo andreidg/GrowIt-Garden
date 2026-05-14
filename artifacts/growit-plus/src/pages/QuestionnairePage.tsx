@@ -575,7 +575,7 @@ export default function QuestionnairePage({ onNext, onBack, initialStep = 1 }: Q
                     </div>
                     {capWarnings[area.id] && (
                       <p className="text-xs text-terracotta mb-2">
-                        Maximum {cfg.maxInput} {cfg.abbr} per dimension applied.
+                        GrowIt supports gardens up to {cfg.maxInput}{cfg.abbr} × {cfg.maxInput}{cfg.abbr}. Your dimensions have been adjusted.
                       </p>
                     )}
                     {/* Quick presets */}

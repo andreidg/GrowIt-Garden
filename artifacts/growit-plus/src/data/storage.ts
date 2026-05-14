@@ -1,5 +1,5 @@
 /**
- * GrowIt+ Plan Persistence
+ * GrowIt Plan Persistence
  * Saves and restores the latest generated plan using localStorage.
  * Uses sessionStorage as a secondary signal for same-tab continuity.
  * The GeneratedPlan type is serialization-safe (no Sets or Date objects).
