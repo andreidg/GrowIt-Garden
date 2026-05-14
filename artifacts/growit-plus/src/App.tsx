@@ -28,6 +28,11 @@ export default function App() {
   const [conflict, setConflict]                 = useState<{ local: GeneratedPlan; account: GeneratedPlan } | null>(null);
   const [bootstrapping, setBootstrapping]       = useState(false);
   const [errorBanner, setErrorBanner]           = useState<string | null>(null);
+  // Cached copy of the account's saved plan once we've fetched it. Used to
+  // surface an explicit "Welcome back, open your saved garden" CTA on the
+  // landing page so users always have a visible recovery path even if the
+  // auto-adopt didn't move them onto PlanPage for any reason.
+  const [accountPlan, setAccountPlan]           = useState<GeneratedPlan | null>(null);
   const lastSyncedIdRef                         = useRef<string | null>(null);
   const lastUserIdRef                           = useRef<string | null>(null);
 
@@ -47,8 +52,11 @@ export default function App() {
 
     if (!isAuthenticated) {
       // Guest mode — nothing to sync. Reset sync tracking so a future login
-      // re-evaluates the local plan against the account plan.
+      // re-evaluates the local plan against the account plan. Also clear the
+      // cached account plan so the previous user's saved plan can't leak into
+      // a different account on the same browser.
       lastSyncedIdRef.current = null;
+      setAccountPlan(null);
       setAuthBootstrapped(true);
       return;
     }
@@ -73,9 +81,13 @@ export default function App() {
         if (localPlan) adoptPlan(localPlan, { pushToServer: false });
       } else if (result.kind === "ok" && localPlan && result.plan.id !== localPlan.id) {
         // Both exist and differ → ask the user.
+        if (cancelled) return;
+        setAccountPlan(result.plan);
         setConflict({ local: localPlan, account: result.plan });
       } else if (result.kind === "ok") {
         // Account plan wins (no local, or local matches).
+        if (cancelled) return;
+        setAccountPlan(result.plan);
         adoptPlan(result.plan, { pushToServer: false });
       } else if (result.kind === "empty" && localPlan) {
         // Guest-to-account migration: upload local plan as the user's first save.
@@ -165,6 +177,11 @@ export default function App() {
     clearPlan();
     setProfile(null);
     setPlan(null);
+    // Hide the "Welcome back, open my garden" CTA — the user explicitly chose
+    // to start fresh, so we shouldn't immediately invite them back to the plan
+    // they just discarded. The plan still lives on the server (it'll be
+    // overwritten when they save the next one), so they don't lose data.
+    setAccountPlan(null);
     lastSyncedIdRef.current = null;
     setStep("landing");
   };
@@ -191,6 +208,32 @@ export default function App() {
         {bootstrapping && (
           <div className="w-full bg-forest/5 border-b border-forest/10 text-forest/70 px-4 py-2 text-xs text-center shrink-0">
             Loading your saved garden plan…
+          </div>
+        )}
+
+        {/* Welcome-back CTA — visible recovery path. Shown when an authenticated
+            user has a saved plan on their account but isn't currently viewing it
+            (e.g. they just landed on / after sign-in, or hit Start Over). The
+            auto-adopt in the bootstrap effect should normally take them straight
+            to PlanPage; this CTA guarantees they always have a clear way back. */}
+        {step === "landing" && isAuthenticated && accountPlan && !bootstrapping && (
+          <div className="w-full bg-forest text-cream px-4 py-3 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold leading-tight">
+                Welcome back{user?.name?.trim() ? `, ${user.name.trim().split(/\s+/)[0]}` : ""}
+              </p>
+              <p className="text-xs text-cream/70 leading-tight mt-0.5 truncate">
+                Your saved garden plan is ready to view.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => adoptPlan(accountPlan, { pushToServer: false })}
+              className="bg-gold text-forest hover:bg-gold/90 rounded-full font-semibold shrink-0"
+              data-testid="btn-open-account-plan"
+            >
+              Open my garden →
+            </Button>
           </div>
         )}
 
