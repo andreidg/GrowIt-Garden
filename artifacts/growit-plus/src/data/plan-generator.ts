@@ -392,17 +392,88 @@ function selectPlants(profile: GardenProfile): SelectionResult {
     `The schedule timing shown is approximate — research the best planting window for your specific variety.`
   );
 
+  // Goal-based (recommendation-first): non-custom goals drive selection; selectedPlantIds are additions
+  if (profile.gardenGoal && profile.gardenGoal !== "custom") {
+    const { plants, cautionNotes } = goalSelectPlants(profile);
+    return { plants: dedupeById([...plants, ...customItems]), cautionNotes: [...cautionNotes, ...customCautions] };
+  }
+
+  // Custom goal or legacy explicit selection: use user's picked list
   if (profile.selectedPlantIds && profile.selectedPlantIds.length > 0) {
     const { plants, cautionNotes } = selectFromUserList(profile, customItems);
     return { plants, cautionNotes: [...cautionNotes, ...customCautions] };
   }
 
-  // Smart deterministic selection
+  // Smart deterministic fallback (legacy — no goal set, no explicit selection)
   const { plants, cautionNotes } = smartSelectPlants(profile);
   return {
     plants: [...plants, ...customItems],
     cautionNotes: [...cautionNotes, ...customCautions],
   };
+}
+
+/** Goal-based plant selection: maps the user's garden goal to an appropriate plant mix,
+ *  then merges any optional manual additions from selectedPlantIds. */
+function goalSelectPlants(profile: GardenProfile): SelectionResult {
+  const area    = profile.lengthFt * profile.widthFt;
+  const goal    = profile.gardenGoal ?? "vegetable";
+  const cautions: string[] = [];
+
+  const FAMILY_KEYWORDS = ["tomato", "bean", "pea", "carrot", "cucumber", "sunflower", "pumpkin", "lettuce", "radish"];
+
+  let basePool: PlantItem[] = [];
+
+  switch (goal) {
+    case "beginner":
+      basePool = filterByConditions([...VEGETABLES, ...HERBS], profile)
+        .filter(p => p.riskLevel === "normal" && p.daysToMaturity <= 90);
+      break;
+    case "vegetable":
+      basePool = filterByConditions([...VEGETABLES, ...HERBS], profile);
+      break;
+    case "herbs-flowers":
+      basePool = filterByConditions([...HERBS, ...FLOWERS], profile);
+      break;
+    case "pollinator": {
+      const pollinators    = filterByConditions(FLOWERS.filter(p => p.gardenBenefits?.pollinatorSupport), profile);
+      const companionHerbs = filterByConditions(HERBS.filter(p => p.gardenBenefits?.companionPlanting), profile);
+      basePool = dedupeById([...pollinators, ...companionHerbs]);
+      if (basePool.length < 3) basePool = filterByConditions([...FLOWERS], profile);
+      break;
+    }
+    case "family": {
+      const familyPlants = [...VEGETABLES, ...FLOWERS].filter(p => FAMILY_KEYWORDS.some(k => p.id.includes(k)));
+      basePool = filterByConditions(familyPlants, profile);
+      if (basePool.length < 3) basePool = filterByConditions([...VEGETABLES], profile);
+      break;
+    }
+    default:
+      return smartSelectPlants(profile);
+  }
+
+  const fitted     = fitToArea(basePool, area);
+  const basePlants = fitted.length > 0 ? fitted : basePool.slice(0, 6);
+
+  // Merge optional manual additions (treated as preferences, not requirements)
+  const additionalIds = profile.selectedPlantIds ?? [];
+  if (additionalIds.length > 0) {
+    const additions = additionalIds
+      .map(id => ALL_PLANTS.find(p => p.id === id))
+      .filter((p): p is PlantItem => !!p)
+      .filter(p => !basePlants.some(b => b.id === p.id));
+
+    for (const plant of additions) {
+      if (!sunlightCompatible(profile.sunlight, plant.minSunlight)) {
+        cautions.push(
+          `You added ${plant.name} — it prefers more light than your ${profile.sunlight} garden provides. ` +
+          `It has been included but may yield less. Consider giving it the sunniest spot in your garden.`
+        );
+      }
+    }
+    return { plants: dedupeById([...basePlants, ...additions]), cautionNotes: cautions };
+  }
+
+  return { plants: basePlants, cautionNotes: cautions };
 }
 
 /** Smart plant selection based on plantPreference (legacy) or inferred category mix. */

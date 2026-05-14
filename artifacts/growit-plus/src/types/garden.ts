@@ -119,7 +119,9 @@ export interface GardenProfile {
   soilType: SoilType;
   // Multi-area support (always ≥ 1; areas[0] must match the primary fields)
   areas: GardenArea[];
-  // Plant selection (empty = use smart deterministic logic)
+  // Garden goal drives recommendation-first plant selection
+  gardenGoal?: string;
+  // For gardenGoal="custom": the full selection. For other goals: optional additions.
   selectedPlantIds: string[];
   customPlants: CustomPlant[];
   // Optional legacy field (used when selectedPlantIds is empty and no AI)

@@ -46,6 +46,49 @@ const QUICK_PRESETS = [
   { label: "Large 16×12", ft: { len: 16, wid: 12 } },
 ];
 
+const GARDEN_GOALS = [
+  { id: "beginner",      emoji: "🌱", label: "Beginner-friendly",    desc: "Easy, forgiving plants for first-time gardeners" },
+  { id: "vegetable",     emoji: "🥕", label: "Vegetable-focused",     desc: "Food-first: salads, roots, greens and staple crops" },
+  { id: "herbs-flowers", emoji: "🌿", label: "Herbs & Flowers",       desc: "Fragrant herbs and colourful seasonal blooms" },
+  { id: "pollinator",    emoji: "🐝", label: "Pollinator-friendly",   desc: "Attract bees, butterflies and beneficial insects" },
+  { id: "family",        emoji: "🧺", label: "Family / Kid-friendly", desc: "Easy-win crops kids love to grow and harvest" },
+  { id: "custom",        emoji: "⚙️", label: "Custom selection",      desc: "I'll choose my own plants" },
+] as const;
+
+const PREVIEW_SUNLIGHT_SCORE: Record<string, number> = {
+  "Full Sun": 5, "Part Sun": 4, "Partial Shade": 3, "Part Shade": 3, "Dappled Shade": 2, "Full Shade": 1,
+};
+const FAMILY_KW = ["tomato", "bean", "pea", "carrot", "cucumber", "sunflower", "pumpkin", "lettuce", "radish"];
+
+function computeGoalPreview(goal: string, sunlight: SunlightLevel, soilType: SoilType, totalArea: number): PlantItem[] {
+  const gardenScore = PREVIEW_SUNLIGHT_SCORE[sunlight] ?? 3;
+  const compat = (plants: PlantItem[]) => plants.filter(p => {
+    const plantScore = PREVIEW_SUNLIGHT_SCORE[p.minSunlight] ?? 3;
+    const sunOk      = gardenScore >= plantScore - 1;
+    const containerOk = soilType !== "Container/Pots" || p.spacingFt <= 1;
+    const sizeOk     = totalArea < 8 ? p.spacingFt <= 1 : totalArea < 16 ? p.spacingFt <= 2 : true;
+    return sunOk && containerOk && sizeOk;
+  });
+  switch (goal) {
+    case "beginner":
+      return compat([...VEGETABLES, ...HERBS]).filter(p => p.riskLevel === "normal" && p.daysToMaturity <= 90);
+    case "vegetable":
+      return compat([...VEGETABLES, ...HERBS]);
+    case "herbs-flowers":
+      return compat([...HERBS, ...FLOWERS]);
+    case "pollinator": {
+      const p = compat(FLOWERS.filter(p => p.gardenBenefits?.pollinatorSupport));
+      const h = compat(HERBS.filter(p => p.gardenBenefits?.companionPlanting));
+      return [...p, ...h].length >= 3 ? [...p, ...h] : compat([...FLOWERS]);
+    }
+    case "family": {
+      const pool = compat([...VEGETABLES, ...FLOWERS].filter(p => FAMILY_KW.some(k => p.id.includes(k))));
+      return pool.length >= 3 ? pool : compat([...VEGETABLES]);
+    }
+    default: return [];
+  }
+}
+
 const TOTAL_STEPS = 4;
 const PRIMARY_ID   = "area-primary";
 
@@ -154,6 +197,8 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
   const [showPhotoFor, setShowPhotoFor] = useState<string | null>(null);
 
   // ── Step 3 ───────────────────────────────────────────────────────────────
+  const [gardenGoal,       setGardenGoal]       = useState<string>("");
+  const [showAddPlants,    setShowAddPlants]    = useState(false);
   const [selectedPlantIds, setSelectedPlantIds] = useState<string[]>([]);
   const [recommendNotes,   setRecommendNotes]   = useState<Record<string, string>>({});
 
@@ -318,10 +363,8 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = () => {
-    if (totalSelected === 0) {
-      setPlantError(true);
-      return;
-    }
+    if (!gardenGoal) { setPlantError(true); return; }
+    if (gardenGoal === "custom" && totalSelected === 0) { setPlantError(true); return; }
     setPlantError(false);
     const primary = areas[0]!;
     onNext({
@@ -332,6 +375,7 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
       sunlight: primary.sunlight,
       soilType: primary.soilType,
       areas,
+      gardenGoal,
       selectedPlantIds,
       customPlants,
     });
@@ -626,175 +670,241 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
           </div>
         )}
 
-        {/* ── STEP 3: Plant Selection ────────────────────────────────────── */}
+        {/* ── STEP 3: Garden Goal ──────────────────────────────────────── */}
         {step === 3 && (
           <div className="px-6 py-8 flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+
+            {/* Header */}
             <div>
-              <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">
-                Step 3 of 4
-              </p>
-              <h2 className="font-serif text-2xl font-semibold text-forest mb-1">
-                Pick your plants
-              </h2>
+              <p className="text-xs font-semibold text-forest/40 uppercase tracking-widest mb-1">Step 3 of 4</p>
+              <h2 className="font-serif text-2xl font-semibold text-forest mb-1">What's your garden goal?</h2>
               <p className="text-sm text-forest/60 leading-relaxed">
-                Select the plants you want to grow. Only your chosen plants will appear in your plan — you must pick at least one.
+                GrowIt will recommend the right plants. You can add specific favourites below.
               </p>
             </div>
 
-            {/* Category filter tabs */}
-            <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
-              {(["all", "vegetables", "herbs", "flowers"] as PlantFilter[]).map(f => (
+            {/* Goal cards */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {GARDEN_GOALS.map(g => (
                 <button
-                  key={f}
-                  onClick={() => setPlantFilter(f)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
-                    plantFilter === f
-                      ? "bg-white text-forest shadow-sm"
-                      : "text-forest/50 hover:text-forest/70"
+                  key={g.id}
+                  onClick={() => {
+                    setGardenGoal(g.id);
+                    setPlantError(false);
+                    if (g.id !== "custom") setSelectedPlantIds([]);
+                  }}
+                  className={`flex flex-col items-start gap-1.5 p-4 rounded-2xl border text-left transition-all ${
+                    gardenGoal === g.id
+                      ? "bg-forest text-cream border-forest"
+                      : "bg-cream-light border-cream-dark text-forest"
                   }`}
                 >
-                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                  <span className="text-xl">{g.emoji}</span>
+                  <p className="text-sm font-semibold leading-tight">{g.label}</p>
+                  <p className={`text-[11px] leading-snug ${gardenGoal === g.id ? "text-cream/70" : "text-forest/50"}`}>
+                    {g.desc}
+                  </p>
                 </button>
               ))}
             </div>
 
-            {(plantFilter === "all" || plantFilter === "vegetables") && (
-              <PlantSection
-                title="Vegetables" emoji="🥕"
-                plants={VEGETABLES}
-                selectedPlantIds={selectedPlantIds}
-                onToggle={togglePlant}
-                onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
-                onRecommend={() => recommendForCategory(VEGETABLES, "vegetables")}
-                recommendNote={recommendNotes["vegetables"]}
-              />
-            )}
-            {(plantFilter === "all" || plantFilter === "herbs") && (
-              <PlantSection
-                title="Herbs" emoji="🌿"
-                plants={HERBS}
-                selectedPlantIds={selectedPlantIds}
-                onToggle={togglePlant}
-                onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
-                onRecommend={() => recommendForCategory(HERBS, "herbs")}
-                recommendNote={recommendNotes["herbs"]}
-              />
-            )}
-            {(plantFilter === "all" || plantFilter === "flowers") && (
-              <PlantSection
-                title="Flowers" emoji="🌸"
-                plants={FLOWERS}
-                selectedPlantIds={selectedPlantIds}
-                onToggle={togglePlant}
-                onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
-                onRecommend={() => recommendForCategory(FLOWERS, "flowers")}
-                recommendNote={recommendNotes["flowers"]}
-              />
-            )}
-
-            {/* Custom plants */}
-            {(plantFilter === "all") && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest">
-                    Custom Plants
-                  </h3>
-                  {!showCustomForm && (
-                    <button onClick={() => setShowCustomForm(true)}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-forest border border-forest/20 px-3 py-1.5 rounded-full hover:bg-forest/5 transition-colors">
-                      <Plus className="w-3 h-3" /> Add custom plant
-                    </button>
-                  )}
-                </div>
-
-                <div className="bg-gold/10 border border-gold/25 rounded-xl px-3 py-2.5 mb-3">
-                  <p className="text-xs text-forest/65 leading-snug">
-                    Custom plants are not yet validated against Alberta growing conditions. Timing in the schedule will be approximate — verify planting windows for your specific variety.
+            {/* Non-custom: recommendation preview */}
+            {gardenGoal && gardenGoal !== "custom" && (() => {
+              const primary  = areas[0]!;
+              const preview  = computeGoalPreview(gardenGoal, primary.sunlight, primary.soilType, primary.lengthFt * primary.widthFt);
+              return (
+                <div>
+                  <p className="text-xs font-bold text-forest/40 uppercase tracking-widest mb-3">
+                    GrowIt recommends
                   </p>
-                </div>
-
-                {showCustomForm && (
-                  <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 mb-3 flex flex-col gap-3">
-                    <input
-                      placeholder="Plant name..."
-                      value={customName}
-                      onChange={e => setCustomName(e.target.value)}
-                      className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
-                    />
-                    <select
-                      value={customCategory}
-                      onChange={e => setCustomCategory(e.target.value as PlantType | "other")}
-                      className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest focus:outline-none focus:border-forest/40">
-                      <option value="vegetable">Vegetable</option>
-                      <option value="herb">Herb</option>
-                      <option value="flower">Flower</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <input
-                      placeholder="Notes (optional)..."
-                      value={customNotes}
-                      onChange={e => setCustomNotes(e.target.value)}
-                      className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40"
-                    />
-                    <div className="flex gap-2">
-                      <button onClick={addCustomPlant} disabled={!customName.trim()}
-                        className="flex-1 bg-forest text-cream py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40">
-                        Add
-                      </button>
-                      <button
-                        onClick={() => { setShowCustomForm(false); setCustomName(""); setCustomNotes(""); }}
-                        className="flex-1 border border-cream-dark text-forest/70 py-2.5 rounded-xl text-sm font-medium">
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {customPlants.map(cp => (
-                  <div key={cp.id}
-                    className="flex items-center gap-3 px-4 py-3 bg-cream-light border border-cream-dark rounded-2xl mb-2">
-                    <span className="text-xl">🌱</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-forest">{cp.name}</p>
-                      <p className="text-[10px] text-forest/50 capitalize">
-                        {cp.category}{cp.notes ? ` · ${cp.notes}` : ""}
+                  {preview.length > 0 ? (
+                    <>
+                      <div className="flex flex-wrap gap-2 mb-2.5">
+                        {preview.map(p => (
+                          <span key={p.id} className="inline-flex items-center gap-1 bg-forest/8 border border-forest/12 rounded-full px-3 py-1.5 text-xs font-medium text-forest">
+                            {p.emoji} {p.name}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-forest/50">
+                        {preview.length} plant{preview.length !== 1 ? "s" : ""} suited to your {primary.sunlight.toLowerCase()} {primary.soilType.toLowerCase()} garden — final selection may vary based on space.
+                      </p>
+                    </>
+                  ) : (
+                    <div className="bg-gold/10 border border-gold/25 rounded-xl px-3 py-2.5">
+                      <p className="text-xs text-forest/65">
+                        No plants from this goal suit your current conditions. Try a different goal or choose Custom selection to pick manually.
                       </p>
                     </div>
-                    <button onClick={() => removeCustom(cp.id)}
-                      className="text-forest/30 hover:text-terracotta transition-colors">
-                      <X className="w-4 h-4" />
-                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Non-custom: optional "Add specific plants" accordion */}
+            {gardenGoal && gardenGoal !== "custom" && (
+              <div className="border-t border-cream-dark">
+                <button
+                  onClick={() => setShowAddPlants(v => !v)}
+                  className="flex items-center justify-between w-full py-3.5 text-sm font-semibold text-forest"
+                >
+                  <span>Add specific plants (optional)</span>
+                  {showAddPlants ? <ChevronUp className="w-4 h-4 text-forest/40" /> : <ChevronDown className="w-4 h-4 text-forest/40" />}
+                </button>
+                {showAddPlants && (
+                  <div className="flex flex-col gap-4 pb-2">
+                    <p className="text-xs text-forest/55 leading-snug">
+                      These will be added on top of GrowIt's recommendations. Plants that don't suit your conditions will be noted in your plan.
+                    </p>
+                    <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
+                      {(["all", "vegetables", "herbs", "flowers"] as PlantFilter[]).map(f => (
+                        <button key={f} onClick={() => setPlantFilter(f)}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+                            plantFilter === f ? "bg-white text-forest shadow-sm" : "text-forest/50 hover:text-forest/70"
+                          }`}>
+                          {f.charAt(0).toUpperCase() + f.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                    {(plantFilter === "all" || plantFilter === "vegetables") && (
+                      <PlantSection title="Vegetables" emoji="🥕" plants={VEGETABLES}
+                        selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                        onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
+                        onRecommend={() => recommendForCategory(VEGETABLES, "vegetables")}
+                        recommendNote={recommendNotes["vegetables"]} />
+                    )}
+                    {(plantFilter === "all" || plantFilter === "herbs") && (
+                      <PlantSection title="Herbs" emoji="🌿" plants={HERBS}
+                        selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                        onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
+                        onRecommend={() => recommendForCategory(HERBS, "herbs")}
+                        recommendNote={recommendNotes["herbs"]} />
+                    )}
+                    {(plantFilter === "all" || plantFilter === "flowers") && (
+                      <PlantSection title="Flowers" emoji="🌸" plants={FLOWERS}
+                        selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                        onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
+                        onRecommend={() => recommendForCategory(FLOWERS, "flowers")}
+                        recommendNote={recommendNotes["flowers"]} />
+                    )}
+                    {selectedPlantIds.length > 0 && (
+                      <p className="text-xs text-forest/50">
+                        {selectedPlantIds.length} plant{selectedPlantIds.length !== 1 ? "s" : ""} added to recommendations.
+                      </p>
+                    )}
                   </div>
-                ))}
+                )}
               </div>
             )}
 
-            {totalSelected > 0 && (
-              <div className="bg-forest/5 border border-forest/10 rounded-xl px-4 py-3">
-                <p className="text-sm font-medium text-forest">
-                  {totalSelected} plant{totalSelected !== 1 ? "s" : ""} selected
-                </p>
+            {/* Custom selection: full plant picker */}
+            {gardenGoal === "custom" && (
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-1 bg-cream-dark/60 rounded-xl p-1">
+                  {(["all", "vegetables", "herbs", "flowers"] as PlantFilter[]).map(f => (
+                    <button key={f} onClick={() => setPlantFilter(f)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+                        plantFilter === f ? "bg-white text-forest shadow-sm" : "text-forest/50 hover:text-forest/70"
+                      }`}>
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                {(plantFilter === "all" || plantFilter === "vegetables") && (
+                  <PlantSection title="Vegetables" emoji="🥕" plants={VEGETABLES}
+                    selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                    onToggleAll={makeToggleAll(VEGETABLES.map(p => p.id))}
+                    onRecommend={() => recommendForCategory(VEGETABLES, "vegetables")}
+                    recommendNote={recommendNotes["vegetables"]} />
+                )}
+                {(plantFilter === "all" || plantFilter === "herbs") && (
+                  <PlantSection title="Herbs" emoji="🌿" plants={HERBS}
+                    selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                    onToggleAll={makeToggleAll(HERBS.map(p => p.id))}
+                    onRecommend={() => recommendForCategory(HERBS, "herbs")}
+                    recommendNote={recommendNotes["herbs"]} />
+                )}
+                {(plantFilter === "all" || plantFilter === "flowers") && (
+                  <PlantSection title="Flowers" emoji="🌸" plants={FLOWERS}
+                    selectedPlantIds={selectedPlantIds} onToggle={togglePlant}
+                    onToggleAll={makeToggleAll(FLOWERS.map(p => p.id))}
+                    onRecommend={() => recommendForCategory(FLOWERS, "flowers")}
+                    recommendNote={recommendNotes["flowers"]} />
+                )}
+                {plantError && totalSelected === 0 && (
+                  <div className="bg-terracotta/10 border border-terracotta/25 rounded-xl px-4 py-3">
+                    <p className="text-sm font-medium text-terracotta">Please select at least one plant to continue.</p>
+                  </div>
+                )}
               </div>
             )}
 
-            {plantError && (
+            {/* Custom plant entry — always visible */}
+            <div className="border-t border-cream-dark pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-forest/40 uppercase tracking-widest">Add a custom plant</h3>
+                {!showCustomForm && (
+                  <button onClick={() => setShowCustomForm(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-forest border border-forest/20 px-3 py-1.5 rounded-full hover:bg-forest/5 transition-colors">
+                    <Plus className="w-3 h-3" /> Add
+                  </button>
+                )}
+              </div>
+              {showCustomForm && (
+                <div className="bg-cream-light border border-cream-dark rounded-2xl p-4 mb-3 flex flex-col gap-3">
+                  <input placeholder="Plant name..." value={customName}
+                    onChange={e => setCustomName(e.target.value)}
+                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40" />
+                  <select value={customCategory} onChange={e => setCustomCategory(e.target.value as PlantType | "other")}
+                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest focus:outline-none focus:border-forest/40">
+                    <option value="vegetable">Vegetable</option>
+                    <option value="herb">Herb</option>
+                    <option value="flower">Flower</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <input placeholder="Notes (optional)..." value={customNotes}
+                    onChange={e => setCustomNotes(e.target.value)}
+                    className="w-full bg-cream border border-cream-dark rounded-xl px-3 py-2.5 text-sm text-forest placeholder:text-forest/30 focus:outline-none focus:border-forest/40" />
+                  <div className="flex gap-2">
+                    <button onClick={addCustomPlant} disabled={!customName.trim()}
+                      className="flex-1 bg-forest text-cream py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40">Add</button>
+                    <button onClick={() => { setShowCustomForm(false); setCustomName(""); setCustomNotes(""); }}
+                      className="flex-1 border border-cream-dark text-forest/70 py-2.5 rounded-xl text-sm font-medium">Cancel</button>
+                  </div>
+                </div>
+              )}
+              {customPlants.map(cp => (
+                <div key={cp.id} className="flex items-center gap-3 px-4 py-3 bg-cream-light border border-cream-dark rounded-2xl mb-2">
+                  <span className="text-xl">🌱</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-forest">{cp.name}</p>
+                    <p className="text-[10px] text-forest/50 capitalize">{cp.category}{cp.notes ? ` · ${cp.notes}` : ""}</p>
+                  </div>
+                  <button onClick={() => removeCustom(cp.id)} className="text-forest/30 hover:text-terracotta transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* No goal selected error */}
+            {plantError && !gardenGoal && (
               <div className="bg-terracotta/10 border border-terracotta/25 rounded-xl px-4 py-3">
-                <p className="text-sm font-medium text-terracotta">
-                  Please select at least one plant to continue.
-                </p>
+                <p className="text-sm font-medium text-terracotta">Please choose a garden goal to continue.</p>
               </div>
             )}
 
             <div className="pt-2 pb-6">
               <button
                 onClick={() => {
-                  if (totalSelected === 0) { setPlantError(true); return; }
+                  if (!gardenGoal) { setPlantError(true); return; }
+                  if (gardenGoal === "custom" && totalSelected === 0) { setPlantError(true); return; }
                   setPlantError(false);
                   setStep(4);
                 }}
                 data-testid="btn-next-step"
                 className="w-full bg-forest text-cream py-4 rounded-2xl font-semibold text-base active:scale-[0.97] transition-transform">
-                Continue
+                {gardenGoal && gardenGoal !== "custom" ? "Generate My Plan" : "Continue"}
               </button>
             </div>
           </div>
