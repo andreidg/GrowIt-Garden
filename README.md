@@ -221,7 +221,7 @@ Each risk carries a severity level (high / medium / low), a human-readable label
 ```bash
 # 1. Clone the repository
 git clone <repo-url>
-cd growit
+cd sproutit
 
 # 2. Install dependencies
 pnpm install
@@ -262,7 +262,7 @@ pnpm run build
 | Variable | Required | Description |
 |---|---|---|
 | `SESSION_SECRET` | Yes | Secret used to sign session cookies. Use a long random string (32+ chars). Never commit this value. |
-| `DATABASE_URL` | Yes | PostgreSQL connection string, e.g. `postgres://user:pass@localhost:5432/growit` |
+| `DATABASE_URL` | Yes | PostgreSQL connection string, e.g. `postgres://user:pass@localhost:5432/sproutit` |
 | `OPENAI_API_KEY` | No | API key for the AI plan generation and photo analysis routes. If absent, the app falls back to the deterministic plan generator. |
 | `PORT` | No | Port for the API server. Defaults to `5000`. Set automatically by the Replit workflow system. |
 | `BASE_PATH` | No | Base path prefix for the API server. Set automatically by the Replit reverse proxy. |
@@ -271,7 +271,7 @@ Create a `.env` file in the workspace root (never commit it). Example:
 
 ```
 SESSION_SECRET=replace-with-a-long-random-string
-DATABASE_URL=postgres://postgres:password@localhost:5432/growit
+DATABASE_URL=postgres://postgres:password@localhost:5432/sproutit
 OPENAI_API_KEY=your-openai-api-key-here
 ```
 

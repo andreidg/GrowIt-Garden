@@ -28,7 +28,7 @@ export function Almanac() {
 
       {/* 1. Top bar */}
       <div className="bg-terracotta text-[#F5F0E8] px-5 py-3 flex items-center justify-between z-10 relative shadow-sm">
-        <div className="font-serif font-bold text-xl tracking-tight">GrowIt+</div>
+        <div className="font-serif font-bold text-xl tracking-tight">SproutIt</div>
         <div className="bg-[#A44C1D] text-[#FDF8F3] px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide uppercase flex items-center gap-1.5 opacity-90">
           <Leaf size={10} />
           Alberta · Zone 3b–4a
@@ -215,7 +215,7 @@ export function Almanac() {
       {/* 7. Footer */}
       <div className="bg-[#1A3C2E] text-[#F0E8DC] px-6 py-8 mt-auto">
         <div className="flex flex-col items-center text-center">
-          <div className="font-serif font-bold text-xl tracking-tight mb-4 text-[#D4A853]">GrowIt+</div>
+          <div className="font-serif font-bold text-xl tracking-tight mb-4 text-[#D4A853]">SproutIt</div>
           <div className="flex items-center gap-3 text-[13px] opacity-80 mb-6">
             <span>Privacy</span>
             <span>·</span>

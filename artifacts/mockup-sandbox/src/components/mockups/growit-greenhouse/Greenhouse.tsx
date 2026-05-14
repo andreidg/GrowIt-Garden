@@ -23,7 +23,7 @@ export function Greenhouse() {
           
           <header className="flex items-center gap-2 mb-10 relative z-10">
             <Leaf className="w-5 h-5 text-[#F5F0E8]" />
-            <span className="font-semibold text-sm tracking-wide">GrowIt+</span>
+            <span className="font-semibold text-sm tracking-wide">SproutIt</span>
           </header>
 
           <div className="relative z-10 space-y-4">
