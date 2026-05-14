@@ -50,6 +50,7 @@ The MVP is anchored in Alberta (Zone 3–4a, with a 100–120 frost-free-day sea
 | Download & share | Export plan as a branded multi-page PDF (jsPDF) with paginated schedule cards and category-grouped plant lists; share via Web Share API with clipboard fallback |
 | Print styling | All three plan tabs (Map, Schedule, Plants) visible in print; colour-accurate; A4 page margins |
 | No account required | Plans saved to `localStorage`; returning users see their last plan |
+| Optional account sync | Sign in with Replit to save your plan to your account so it follows you across devices and browsers. Guest plans are automatically migrated to your account on first login; if both a guest plan and an account plan exist, the app asks which one to keep. Sync failures show a non-blocking banner and the local plan stays usable. |
 
 ---
 
@@ -84,8 +85,8 @@ The MVP is anchored in Alberta (Zone 3–4a, with a 100–120 frost-free-day sea
 | Reverse proxy | Replit path-based shared proxy |
 | Weather data | Open-Meteo (open, no API key required) |
 | AI inference | OpenAI-compatible API via Replit AI Integrations proxy |
-| Persistence | Browser `localStorage` + `sessionStorage` (no account required) |
-| Auth | Replit Auth (optional, OpenID Connect) |
+| Persistence | Browser `localStorage` for guests; PostgreSQL (one row per user, keyed by Replit `sub`) for signed-in users — local cache is kept as an offline fallback |
+| Auth | Replit Auth (optional sign-in, OpenID Connect with PKCE) — gates only the `/api/plans` sync endpoints |
 
 ---
 
@@ -284,7 +285,9 @@ OPENAI_API_KEY=your-openai-api-key-here
 - **Six cities** — Only Calgary, Edmonton, Red Deer, Airdrie, Cochrane, and Okotoks are available. Rural or small-town users should select their nearest city.
 - **Frost dates are historical averages** — Dates are based on Environment Canada historical records, not real-time long-range forecasting. An unusually early or late frost year will not be reflected.
 - **AI plan generation requires a valid API key** — Without `OPENAI_API_KEY`, the app falls back to the deterministic generator. The fallback is fully functional but does not include AI-written growing notes.
-- **No cross-device sync** — Plans are saved to `localStorage` and are lost if the browser cache is cleared or a different device is used (unless the user downloads the PDF file).
+- **Cross-device sync requires sign-in** — Guest plans are saved to `localStorage` only and are lost if the browser cache is cleared or a different device is used (unless the user downloads the PDF). Signing in with Replit Auth syncs the active plan to PostgreSQL so it follows the user across devices.
+- **One saved plan per signed-in user** — Each authenticated user has at most one synced plan (the most recent one). Multi-plan history is not yet supported.
+- **Server-side sessions are in-memory** — Auth sessions are kept in a process-local map; restarting the API server signs everyone out. Saved plans are unaffected (they live in PostgreSQL).
 - **Photo analyser accuracy** — The AI light/soil detection from a garden photo is best-effort and may misread unusual conditions (deep shade, overexposed photos, snow cover). Always verify the pre-filled values.
 - **Plant database scope** — The database includes 53 plants (15 vegetables, 9 herbs, 10 flowers, 19 foliage & ornamental) common to Alberta gardens. Unusual or specialty varieties are not included; use the custom-plant entry for these.
 - **No real-time soil data** — Soil type is self-reported. The app does not connect to soil databases or mapping services.
@@ -295,7 +298,7 @@ OPENAI_API_KEY=your-openai-api-key-here
 - **Photo scanner does not diagnose pests or disease** — It only estimates sunlight level and soil/container type. It will not identify plant pests, fungal disease, nutrient deficiency, or any other plant-health issue.
 - **Custom plants may not have verified local growing rules** — Plants added via the custom-entry field do not go through the regional whitelist, so their fit with the selected region, sunlight, and frost window is not validated.
 - **Weather-risk advisory is short-term** — The card surfaces the next 7 days only and should not replace local judgement about long-range conditions.
-- **No authentication, payment, or admin features in the MVP** — There is no login, no premium tier, no e-commerce, no analytics, and no admin dashboard. Replit Auth is wired as an optional sign-in but is not used to gate any feature.
+- **No payment or admin features in the MVP** — There is no premium tier, no e-commerce, no analytics, and no admin dashboard. Replit Auth is wired as an optional sign-in; it is only used to enable cross-device plan sync and does not gate any other feature.
 
 ---
 
@@ -305,7 +308,8 @@ OPENAI_API_KEY=your-openai-api-key-here
 - **Richer plant database** — Significantly more vegetables, herbs, flowers, native species, and small fruits, with deeper region-by-region suitability data
 - **Improved AI plan generation** — Better prompt structure, model choice, and validation so the AI layer adds more reliable growing notes and per-plant care guidance
 - **Gemini / video garden walkthrough analysis** — Allow users to upload a short video walk-through of their yard so the system can identify multiple zones (sun pockets, shade, slope) instead of one photo at a time
-- **Account saving** — Optional cloud sync so users can save and restore multiple plans across devices
+- **Multi-plan account history** — Saving and restoring more than one named plan per account (the current build syncs a single active plan per signed-in user)
+- **Persistent server sessions** — Move auth sessions from the in-memory map to a `sessions` table or Redis so deployments don't sign users out
 - **Multi-season crop rotation** — Plan year 2 and year 3 layouts that rotate plant families to maintain soil health
 - **Deeper companion-planting education** — Surface the "why" behind plant pairings (pest deterrence, pollinator support, nutrient balance) as opt-in learning content
 - **Nursery / seed supplier integrations** — Direct links to local suppliers for the plants in the plan, with availability and seed-vs-transplant filters

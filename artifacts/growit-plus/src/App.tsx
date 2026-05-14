@@ -58,25 +58,33 @@ export default function App() {
     setErrorBanner(null);
 
     (async () => {
-      const accountPlan = await fetchPlan();
+      const result = await fetchPlan();
       if (cancelled) return;
 
       const localPlan = loadPlan();
 
-      if (accountPlan && localPlan && accountPlan.id !== localPlan.id) {
+      if (result.kind === "error") {
+        // CRITICAL: do NOT migrate the local plan to the account on a fetch
+        // error — we don't know whether the account already has a plan, and
+        // pushing now could silently overwrite it. Surface a banner and keep
+        // the local plan visible if there is one. The user can retry by
+        // refreshing.
+        setErrorBanner("We could not sync your plan right now. Your plan is still saved on this device.");
+        if (localPlan) adoptPlan(localPlan, { pushToServer: false });
+      } else if (result.kind === "ok" && localPlan && result.plan.id !== localPlan.id) {
         // Both exist and differ → ask the user.
-        setConflict({ local: localPlan, account: accountPlan });
-      } else if (accountPlan) {
+        setConflict({ local: localPlan, account: result.plan });
+      } else if (result.kind === "ok") {
         // Account plan wins (no local, or local matches).
-        adoptPlan(accountPlan, { pushToServer: false });
-      } else if (localPlan) {
+        adoptPlan(result.plan, { pushToServer: false });
+      } else if (result.kind === "empty" && localPlan) {
         // Guest-to-account migration: upload local plan as the user's first save.
         const ok = await pushPlan(localPlan);
         if (cancelled) return;
         if (!ok) setErrorBanner("We could not sync your plan right now. Your plan is still saved on this device.");
         adoptPlan(localPlan, { pushToServer: false, justSynced: ok });
       }
-      // else: no plan anywhere — let user create one normally.
+      // else: result.kind === "empty" with no local plan — let user create one normally.
 
       if (!cancelled) {
         setBootstrapping(false);

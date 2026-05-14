@@ -15,10 +15,21 @@ import type { GeneratedPlan } from "@/types/garden";
 
 export type SyncStatus = "idle" | "loading" | "saving" | "error";
 
+/**
+ * Tri-state result for plan fetch. Crucially, `"error"` is **distinct** from
+ * `"empty"` so the caller can avoid mistaking a transient network failure
+ * for "this user has no saved plan" (which would otherwise trigger an
+ * unintended guest→account migration that overwrites the real account plan).
+ */
+export type FetchPlanResult =
+  | { kind: "ok";    plan: GeneratedPlan }
+  | { kind: "empty" }
+  | { kind: "error"; message: string };
+
 export interface PlanSyncApi {
   status:    SyncStatus;
   lastError: string | null;
-  fetchPlan: () => Promise<GeneratedPlan | null>;
+  fetchPlan: () => Promise<FetchPlanResult>;
   savePlan:  (plan: GeneratedPlan) => Promise<boolean>;
 }
 
@@ -26,20 +37,26 @@ export function usePlanSync(): PlanSyncApi {
   const [status,    setStatus]    = useState<SyncStatus>("idle");
   const [lastError, setLastError] = useState<string | null>(null);
 
-  const fetchPlan = useCallback(async (): Promise<GeneratedPlan | null> => {
+  const fetchPlan = useCallback(async (): Promise<FetchPlanResult> => {
     setStatus("loading");
     setLastError(null);
     try {
       const res = await fetch("/api/plans", { credentials: "include" });
-      if (res.status === 401) { setStatus("idle"); return null; }
+      // 401 means "session expired / not authenticated" — treat as a soft empty
+      // result rather than an error: the auth hook will already drive the UI
+      // back to a logged-out state and we don't want a scary banner.
+      if (res.status === 401) { setStatus("idle"); return { kind: "empty" }; }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json() as { plan: GeneratedPlan | null };
       setStatus("idle");
-      return body.plan ?? null;
+      return body.plan
+        ? { kind: "ok", plan: body.plan }
+        : { kind: "empty" };
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
       setStatus("error");
-      setLastError(err instanceof Error ? err.message : "Unknown error");
-      return null;
+      setLastError(message);
+      return { kind: "error", message };
     }
   }, []);
 

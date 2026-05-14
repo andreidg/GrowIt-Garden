@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "GrowIt+"
+title = "GrowIt"
 version = "1.0.0"
 id = "artifacts/growit-plus"
 router = "path"
