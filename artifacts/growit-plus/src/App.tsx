@@ -20,7 +20,7 @@ export default function App() {
   const [plan, setPlan]                 = useState<GeneratedPlan | null>(null);
   const [hasSavedPlan, setHasSavedPlan] = useState(false);
 
-  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user, logout } = useAuth();
   const { fetchPlan, savePlan: pushPlan, status: syncStatus, lastError: syncError } = usePlanSync();
 
   // Auth-driven sync state
@@ -189,6 +189,27 @@ export default function App() {
   return (
     <MobileShell>
       <div className="w-full h-full flex flex-col items-center bg-cream text-forest font-sans overflow-hidden">
+
+        {/* Account strip — gives the user a way back to landing / a sign-out
+            control while inside the questionnaire or plan view. The landing
+            page already has its own sign-in/out control in the hero, so we
+            only render this when the user is past it. */}
+        {isAuthenticated && step !== "landing" && (
+          <div className="w-full bg-cream-light border-b border-cream-dark px-4 py-1.5 flex items-center justify-end gap-3 shrink-0 text-xs">
+            {user?.name?.trim() && (
+              <span className="text-forest/60 truncate max-w-[160px]">
+                Signed in as <span className="font-semibold text-forest">{user.name.trim()}</span>
+              </span>
+            )}
+            <button
+              onClick={logout}
+              className="text-forest/70 hover:text-forest font-semibold underline-offset-2 hover:underline"
+              data-testid="btn-sign-out"
+            >
+              Sign out
+            </button>
+          </div>
+        )}
 
         {/* Sync error banner (non-blocking) */}
         {errorBanner && (
