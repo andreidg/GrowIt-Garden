@@ -1,8 +1,13 @@
+import { useAuth } from "@/hooks/useAuth";
+import { LogIn, LogOut, User } from "lucide-react";
+
 interface LandingPageProps {
   onStart: () => void;
 }
 
 export default function LandingPage({ onStart }: LandingPageProps) {
+  const { user, isLoading, isAuthenticated, login, logout } = useAuth();
+
   return (
     <div className="flex-1 flex flex-col min-h-full bg-cream-light overflow-y-auto hide-scrollbar animate-in fade-in duration-500">
 
@@ -14,15 +19,44 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           <div className="absolute w-96 h-96 border border-cream/10 rounded-full -top-12 -left-24" />
         </div>
 
-        {/* Logo + wordmark */}
+        {/* Logo + wordmark + auth */}
         <header className="flex items-center gap-3 mb-10 relative z-10">
           <div className="w-10 h-10 bg-cream rounded-xl flex items-center justify-center shadow-sm shrink-0">
             <img src="/logo.svg" alt="GrowIt logo" className="w-7 h-7" />
           </div>
           <span className="font-serif text-xl font-semibold text-cream tracking-wide flex-1">GrowIt</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-cream/55 bg-cream/10 border border-cream/15 px-2.5 py-1 rounded-full">
-            No account needed
-          </span>
+
+          {!isLoading && (
+            isAuthenticated && user ? (
+              <div className="flex items-center gap-2">
+                {user.profileImage ? (
+                  <img src={user.profileImage} alt={user.name} className="w-8 h-8 rounded-full border-2 border-cream/30 object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-cream/20 flex items-center justify-center border border-cream/30">
+                    <User className="w-4 h-4 text-cream" />
+                  </div>
+                )}
+                <span className="text-sm text-cream/80 font-medium hidden xs:block max-w-[80px] truncate">{user.name}</span>
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-lg text-cream/60 hover:text-cream hover:bg-cream/10 transition-colors"
+                  aria-label="Sign out"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={login}
+                className="flex items-center gap-1.5 bg-cream/15 hover:bg-cream/25 border border-cream/20 text-cream text-sm font-medium px-3 py-1.5 rounded-full transition-colors"
+                data-testid="btn-sign-in"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Sign in
+              </button>
+            )
+          )}
         </header>
 
         {/* Headline */}
@@ -31,7 +65,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
             Your Alberta garden,<br />perfectly planned.
           </h1>
           <p className="text-cream/80 text-lg leading-relaxed max-w-xs">
-            Plan your local garden with region-aware recommendations — frost dates, sunlight, and soil all factored in.
+            The smart gardening app built exclusively for Alberta's short growing season.
           </p>
         </div>
 
@@ -54,7 +88,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           {[
             { icon: "📅", label: "Local Frost Dates" },
             { icon: "☀️", label: "Sunlight Match" },
-            { icon: "🌿", label: "Companion-Smart Layout" },
+            { icon: "🌿", label: "Companion Planting" },
             { icon: "📍", label: "Region-Specific" },
           ].map(({ icon, label }) => (
             <div
