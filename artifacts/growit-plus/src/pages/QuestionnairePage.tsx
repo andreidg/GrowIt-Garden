@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { REGION_KEYS } from "@/data/locations";
+import { REGION_KEYS, GROWING_REGIONS } from "@/data/locations";
 import { VEGETABLES, HERBS, FLOWERS, type PlantItem } from "@/data/plants";
 import type { GardenProfile, SunlightLevel, SoilType, UnitSystem, GardenArea, CustomPlant, PlantType } from "@/types/garden";
 import { UNIT_CONFIG, capToMax, toInternalFt } from "@/utils/units";
@@ -426,19 +426,42 @@ export default function QuestionnairePage({ onNext, onBack }: QuestionnairePageP
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              {REGION_KEYS.map(key => (
-                <button key={key} onClick={() => setRegion(key)}
-                  className={`flex flex-col items-start p-4 rounded-2xl border transition-all ${
-                    region === key
-                      ? "bg-forest border-forest text-cream"
-                      : "bg-cream-light border-cream-dark text-forest"
-                  }`}>
-                  <span className="font-semibold text-sm leading-tight">
-                    {REGION_LABELS[key] ?? key}
-                  </span>
-                </button>
-              ))}
+              {REGION_KEYS.map(key => {
+                const r = GROWING_REGIONS[key];
+                const isSelected = region === key;
+                return (
+                  <button key={key} onClick={() => setRegion(key)}
+                    className={`flex flex-col items-start p-4 rounded-2xl border transition-all ${
+                      isSelected
+                        ? "bg-forest border-forest text-cream"
+                        : "bg-cream-light border-cream-dark text-forest"
+                    }`}>
+                    <span className="font-semibold text-sm leading-tight mb-1">
+                      {REGION_LABELS[key] ?? key}
+                    </span>
+                    <span className={`text-[10px] font-medium ${isSelected ? "text-cream/60" : "text-forest/45"}`}>
+                      Zone {r?.zone} · ❄️ {r?.lastSpringFrost}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+
+            {/* Selected region frost date preview */}
+            {GROWING_REGIONS[region] && (
+              <div className="flex gap-2">
+                <div className="flex-1 bg-forest/7 border border-forest/12 rounded-2xl p-3.5 text-center">
+                  <p className="text-[9px] font-bold text-forest/40 uppercase tracking-wider mb-1">Last Spring Frost</p>
+                  <p className="text-base font-bold text-forest">{GROWING_REGIONS[region]!.lastSpringFrost}</p>
+                  <p className="text-[10px] text-forest/45 mt-0.5">Safe to plant outdoors after</p>
+                </div>
+                <div className="flex-1 bg-terracotta/7 border border-terracotta/15 rounded-2xl p-3.5 text-center">
+                  <p className="text-[9px] font-bold text-terracotta/50 uppercase tracking-wider mb-1">First Fall Frost</p>
+                  <p className="text-base font-bold text-terracotta">{GROWING_REGIONS[region]!.firstFallFrost}</p>
+                  <p className="text-[10px] text-terracotta/45 mt-0.5">Bring tender plants in by</p>
+                </div>
+              </div>
+            )}
 
             {/* Why this matters */}
             <div className="bg-forest/5 rounded-2xl overflow-hidden border border-forest/8">

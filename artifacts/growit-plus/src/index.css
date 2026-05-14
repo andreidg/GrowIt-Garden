@@ -115,9 +115,34 @@
 
 @media print {
   .no-print { display: none !important; }
-  body { background: white; }
+
+  @page {
+    margin: 2cm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: white;
+    font-size: 11pt;
+    color: #1A3C2E;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Show all three plan tabs when printing */
+  .hidden { display: block !important; }
+
+  /* Force colour backgrounds to print */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
   .print-break { page-break-before: always; }
-  [role="tabpanel"] { display: block !important; }
+
+  /* Make cards print cleanly */
+  [class*="rounded"] { border-radius: 8px !important; }
+  [class*="shadow"]  { box-shadow: none !important; }
+
+  /* Bottom nav is already hidden via no-print; ensure no extra nav whitespace */
+  nav { display: none !important; }
 }
 
 @layer utilities {

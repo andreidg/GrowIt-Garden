@@ -11,21 +11,31 @@ function formatSunlight(s: string): string {
   return s + " or brighter";
 }
 
+const TYPE_CFG: Record<string, { pill: string; icon: string; label: string }> = {
+  vegetable: {
+    pill:  "bg-[#DFF0E6] border border-[#9DC9AD] text-[#1A3C2E]",
+    icon:  "🥗",
+    label: "Vegetable",
+  },
+  herb: {
+    pill:  "bg-[#F5EDD8] border border-[#D4B068] text-[#7A5218]",
+    icon:  "🌿",
+    label: "Herb",
+  },
+  flower: {
+    pill:  "bg-[#F5E8F2] border border-[#C8A0C8] text-[#8B3A7E]",
+    icon:  "🌸",
+    label: "Flower",
+  },
+};
+
 export default function PlantLegend({ plants }: PlantLegendProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-3" data-testid="plant-legend">
       {plants.map(plant => {
-        let typeClass = "bg-forest/10 text-forest-dark";
-        let typeLabel = "Vegetable";
-        if (plant.type === "herb") {
-          typeClass = "bg-gold/20 text-gold-dark";
-          typeLabel = "Herb";
-        } else if (plant.type === "flower") {
-          typeClass = "bg-frost/20 text-frost-dark";
-          typeLabel = "Flower";
-        }
+        const cfg = TYPE_CFG[plant.type] ?? TYPE_CFG["vegetable"]!;
 
         const benefits = plant.gardenBenefits;
         const benefitTags: string[] = [];
@@ -50,8 +60,8 @@ export default function PlantLegend({ plants }: PlantLegendProps) {
                   {plant.name}
                 </p>
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${typeClass}`}>
-                    {typeLabel}
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${cfg.pill}`}>
+                    {cfg.icon} {cfg.label}
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-forest/50">
                     {plant.daysToMaturity} days
@@ -60,7 +70,7 @@ export default function PlantLegend({ plants }: PlantLegendProps) {
                 {benefitTags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {benefitTags.map(tag => (
-                      <span key={tag} className="text-[10px] bg-frost/15 text-frost-dark px-2 py-0.5 rounded-full border border-frost/30">
+                      <span key={tag} className="text-[10px] bg-forest/8 text-forest/70 px-2 py-0.5 rounded-full border border-forest/15">
                         {tag}
                       </span>
                     ))}

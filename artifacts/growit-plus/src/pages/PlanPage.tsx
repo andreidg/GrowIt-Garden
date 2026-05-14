@@ -226,6 +226,10 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
           <div className="bg-cream-light border border-cream-dark px-3 py-1 rounded-full text-xs font-medium text-forest">
             {selectedPlants.length} plants
           </div>
+          <div className="bg-cream-light border border-cream-dark px-3 py-1 rounded-full text-xs font-medium text-forest flex items-center gap-1.5">
+            <span>❄️</span>
+            <span>{region.lastSpringFrost} – {region.firstFallFrost}</span>
+          </div>
           {flowerCount > 0 && (
             <div className="bg-gold/20 border border-gold/30 px-3 py-1 rounded-full text-xs font-medium text-forest">
               {flowerCount} flower{flowerCount > 1 ? "s" : ""}
@@ -406,7 +410,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
         </div>
 
         {/* ── SCHEDULE TAB ── */}
-        <div className={`${activeTab === "schedule" ? "block" : "hidden"} px-6 py-6 pb-8`}>
+        <div className={`${activeTab === "schedule" ? "block" : "hidden"} print:!block px-6 py-6 pb-8`}>
           <h2 className="font-serif text-xl font-semibold text-forest mb-1">
             Weekly Schedule
           </h2>
@@ -418,7 +422,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
         </div>
 
         {/* ── PLANTS TAB ── */}
-        <div className={`${activeTab === "plants" ? "block" : "hidden"} px-6 py-6 pb-8 space-y-6`}>
+        <div className={`${activeTab === "plants" ? "block" : "hidden"} print:!block px-6 py-6 pb-8 space-y-6`}>
           <PlantTimeline plants={selectedPlants} schedule={schedule} />
           <div>
             <div className="flex items-center justify-between mb-1">

@@ -104,12 +104,14 @@ export default function LandingPage({ onStart }: LandingPageProps) {
 
       {/* ── 3. How it works ── */}
       <section className="bg-cream-light px-6 py-8 shrink-0">
-        <h2 className="font-serif text-2xl font-semibold text-forest mb-6">How it works</h2>
+        <h2 className="font-serif text-2xl font-semibold text-forest mb-2">How it works</h2>
+        <p className="text-sm text-forest/55 mb-6 leading-relaxed">Four steps from blank yard to full garden plan.</p>
         <div className="space-y-3">
           {[
-            { step: 1, emoji: "📐", title: "Choose your space",       desc: "Tell us your garden bed size and sun exposure." },
-            { step: 2, emoji: "❄️", title: "Confirm your frost dates", desc: "We pinpoint your exact growing window for your region." },
-            { step: 3, emoji: "🌱", title: "Get your full garden plan", desc: "A customised schedule for starting seeds and transplanting." },
+            { step: 1, emoji: "📍", title: "Pick your Alberta location",     desc: "We look up your city's exact frost dates and climate zone." },
+            { step: 2, emoji: "🌿", title: "Describe your garden space",      desc: "Enter bed dimensions, sunlight level, and soil type." },
+            { step: 3, emoji: "🎯", title: "Choose a goal or select plants",  desc: "Pick a growing goal and we'll recommend the right plants — or choose your own." },
+            { step: 4, emoji: "🗓", title: "Get your complete plan",          desc: "A visual garden map and week-by-week schedule, from seed to harvest." },
           ].map(({ step, emoji, title, desc }) => (
             <div
               key={step}
@@ -137,23 +139,57 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         </h2>
 
         <div className="bg-cream rounded-3xl shadow-sm p-5 border border-cream-dark">
-          <h3 className="text-sm font-semibold text-forest mb-3">Your Garden Map</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-forest">Sample Garden Map</h3>
+            <div className="flex gap-1.5">
+              {[
+                { icon: "🥗", label: "Veg",    pill: "bg-[#DFF0E6] border border-[#9DC9AD] text-[#1A3C2E]" },
+                { icon: "🌿", label: "Herb",   pill: "bg-[#F5EDD8] border border-[#D4B068] text-[#7A5218]" },
+                { icon: "🌸", label: "Flower", pill: "bg-[#F5E8F2] border border-[#C8A0C8] text-[#8B3A7E]" },
+              ].map(c => (
+                <span key={c.label} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${c.pill}`}>
+                  {c.icon} {c.label}
+                </span>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-5 gap-1 mb-5">
-            {Array.from({ length: 20 }).map((_, i) => (
+            {[
+              { emoji: "🍅", cls: "bg-[#DFF0E6] border-[#9DC9AD]" },
+              { emoji: "🍅", cls: "bg-[#DFF0E6] border-[#9DC9AD]" },
+              { emoji: "",   cls: "bg-forest/5 border-forest/10" },
+              { emoji: "🌼", cls: "bg-[#F5E8F2] border-[#C8A0C8]" },
+              { emoji: "🌼", cls: "bg-[#F5E8F2] border-[#C8A0C8]" },
+              { emoji: "🥬", cls: "bg-[#DFF0E6] border-[#9DC9AD]" },
+              { emoji: "🥬", cls: "bg-[#DFF0E6] border-[#9DC9AD]" },
+              { emoji: "",   cls: "bg-forest/5 border-forest/10" },
+              { emoji: "🌿", cls: "bg-[#F5EDD8] border-[#D4B068]" },
+              { emoji: "🌿", cls: "bg-[#F5EDD8] border-[#D4B068]" },
+              { emoji: "🥕", cls: "bg-[#DFF0E6] border-[#9DC9AD]" },
+              { emoji: "🥕", cls: "bg-[#DFF0E6] border-[#9DC9AD]" },
+              { emoji: "",   cls: "bg-forest/5 border-forest/10" },
+              { emoji: "🌿", cls: "bg-[#F5EDD8] border-[#D4B068]" },
+              { emoji: "🌸", cls: "bg-[#F5E8F2] border-[#C8A0C8]" },
+              { emoji: "🌸", cls: "bg-[#F5E8F2] border-[#C8A0C8]" },
+              { emoji: "",   cls: "bg-forest/5 border-forest/10" },
+              { emoji: "🥕", cls: "bg-[#DFF0E6] border-[#9DC9AD]" },
+              { emoji: "",   cls: "bg-forest/5 border-forest/10" },
+              { emoji: "🌿", cls: "bg-[#F5EDD8] border-[#D4B068]" },
+            ].map(({ emoji, cls }, i) => (
               <div
                 key={i}
-                className="aspect-square bg-forest/8 border border-forest/10 rounded-xl flex items-center justify-center text-base"
+                className={`aspect-square border rounded-xl flex items-center justify-center text-base ${cls}`}
               >
-                {i === 2 || i === 3 ? "🍅" : i === 7 || i === 8 ? "🥬" : i === 15 ? "🥕" : i === 11 ? "🌿" : ""}
+                {emoji}
               </div>
             ))}
           </div>
 
-          <div className="bg-cream-dark/40 rounded-xl p-3 border border-cream-dark flex items-start gap-3">
+          <div className="bg-forest text-cream rounded-xl p-3 flex items-start gap-3">
             <div className="w-1.5 rounded-full bg-gold shrink-0 self-stretch" />
             <div>
-              <div className="text-[10px] font-semibold text-forest/50 mb-0.5 uppercase tracking-wider">This Week</div>
-              <div className="text-sm font-medium text-forest">Start tomatoes indoors 🍅</div>
+              <div className="text-[10px] font-semibold text-cream/50 mb-0.5 uppercase tracking-wider">📅 This Week · May 14</div>
+              <div className="text-sm font-medium">Start tomatoes indoors 🍅 &amp; direct sow carrots 🥕</div>
             </div>
           </div>
         </div>

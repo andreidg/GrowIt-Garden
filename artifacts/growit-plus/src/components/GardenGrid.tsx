@@ -169,6 +169,11 @@ export default function GardenGrid({
         </div>
       </div>
 
+      {/* ── Tap hint ── */}
+      <p className="text-[10px] text-forest/35 text-center -mt-1 print:hidden">
+        Tap a plant cell for spacing &amp; care details
+      </p>
+
       {/* ── Dimension + legend row ── */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
         <span className="text-xs text-forest/50 font-medium">
