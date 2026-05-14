@@ -6,7 +6,7 @@
 
 ## Product Description
 
-GrowIt is a free, account-optional web application that generates a personalised vegetable, herb, and flower garden plan calibrated to your specific Alberta location. You answer four questions — where you live, how big your garden beds are, and what you want to grow — and GrowIt produces a colour-coded garden map, a week-by-week planting schedule anchored to your city's historical frost dates, companion-planting conflict detection, and a live 7-day weather risk advisory. No sign-up, no spreadsheets, no guesswork.
+GrowIt is a free, account-optional web application that generates a personalised vegetable, herb, and flower garden plan calibrated to your specific Alberta location. You answer four questions — where you live, how big your garden beds are, and what you want to grow — and GrowIt produces a colour-coded garden map, a week-by-week planting schedule anchored to your city's historical frost dates, and a live 7-day weather risk advisory. No sign-up, no spreadsheets, no guesswork.
 
 ---
 
@@ -32,14 +32,16 @@ Alberta's growing season is short (as few as 100–120 frost-free days), highly 
 | Multi-area garden setup | Up to five named garden beds with individual dimensions, sunlight level (5 options), and soil type |
 | Imperial / metric toggle | All dimensions entered and stored in feet internally; displayed in the user's preferred unit throughout |
 | Garden goal selection | Six goals (Beginner-friendly, Vegetable-focused, Herbs & Flowers, Pollinator-friendly, Family/Kid-friendly, Custom) that drive automatic plant recommendations |
-| Manual plant selection | Full override: choose from 40+ vegetables, herbs, and flowers across all three categories |
+| Manual plant selection | Full override: choose from 34 vegetables, herbs, and flowers across all three categories |
 | Custom plant entry | Add any plant not in the database with category, basic schedule, and caution notes |
-| Companion-planting analysis | Detects and highlights incompatible adjacent plant pairs on the map; one-tap layout optimiser |
+| Companion-planting placement | Companion rules are used internally to inform plant placement on the map; no warning UI is shown to the user |
 | Garden map | Colour-coded grid (green = vegetable, gold = herb, pink = flower) with per-cell detail panel showing spacing, action type, days to maturity, and care notes |
 | Week-by-week schedule | Collapsible timeline from first indoor seed start to last fall frost, with current-week highlight |
 | AI-enhanced plan | Optional AI layer (OpenAI-compatible) refines plant selection and adds growing notes; deterministic fallback on any failure |
 | Photo analyser | Upload a photo of your garden space; AI detects likely sunlight level and soil type to pre-fill the form |
 | Weather risk card | Live 7-day forecast via Open-Meteo; surfaces frost risk, heat stress, heavy rain, and dry-spell advisories specific to your garden |
+| Resumable questionnaire | Back navigation moves one step at a time and preserves all answers; returning from the frost-confirmation screen restores Step 4 instead of restarting |
+| Alert preferences (preview) | Step 4 lets users preview which alerts they would like to receive; push notifications are scheduled for the next release |
 | Post-plan plant editing | Edit the plant list on the plan page and regenerate the map and schedule without starting over |
 | Download & share | Export plan as Markdown; share via Web Share API with clipboard fallback |
 | Print styling | All three plan tabs (Map, Schedule, Plants) visible in print; colour-accurate; A4 page margins |
@@ -136,7 +138,7 @@ Each plant in the database (`plants.ts`) carries:
 - `spacingFt`: rendered in the detail panel in the user's preferred unit
 - `startIndoors` + `indoorWeeksAhead`: used to schedule seed-start actions
 - `gardenBenefits`: `pollinatorSupport`, `pestDeterrence`, `companionPlanting`, `visualAppeal`
-- `badCompanions`: plant IDs that trigger conflict warnings on the map
+- `badCompanions`: plant IDs that the placement algorithm avoids putting adjacent on the map (used internally only — no warning UI is shown)
 
 Flowers receive special treatment — they show a "Bloom Watch" action type in the schedule and their detail panel shows "Days to Bloom" and garden role notes instead of harvest timing.
 
@@ -248,6 +250,9 @@ OPENAI_API_KEY=sk-...
 - **Photo analyser accuracy** — The AI light/soil detection from a garden photo is best-effort and may misread unusual conditions (deep shade, overexposed photos, snow cover). Always verify the pre-filled values.
 - **Plant database scope** — The database includes 34 plants (15 vegetables, 9 herbs, 10 flowers) common to Alberta gardens. Unusual or specialty varieties are not included; use the custom-plant entry for these.
 - **No real-time soil data** — Soil type is self-reported. The app does not connect to soil databases or mapping services.
+- **Alert preferences are a preview feature** — Step 4 of the questionnaire collects alert preferences (frost warnings, hail alerts, planting reminders, watering days) and a preferred notification time, but no push-notification or email service is wired up yet. The screen is clearly labelled "Coming soon" and the preferences are not persisted between sessions.
+- **Plants Timeline temporarily hidden** — The timeline view on the Plants tab is hidden in this build because the bar-rendering data is incomplete. The plant list, care notes, and schedule view remain fully functional.
+- **Companion conflict warnings are intentionally suppressed** — Companion-planting rules still inform internal plant placement, but per the MVP design no warning badges, conflict notices, or "incompatible neighbour" text are surfaced to the user.
 
 ---
 
