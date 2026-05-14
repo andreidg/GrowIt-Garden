@@ -11,7 +11,7 @@ import WeatherStrip from "@/components/WeatherStrip";
 import PlantTimeline from "@/components/PlantTimeline";
 import { useWeatherRisk } from "@/hooks/useWeatherRisk";
 import { useForecast } from "@/hooks/useForecast";
-import { optimizeGridLayout, generatePlan } from "@/data/plan-generator";
+import { generatePlan } from "@/data/plan-generator";
 import { ALL_PLANTS } from "@/data/plants";
 import { savePlan } from "@/data/storage";
 
@@ -23,8 +23,6 @@ interface PlanPageProps {
 export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
   const [activeTab, setActiveTab] = useState<PlanTab>("map");
   const [copied, setCopied]       = useState(false);
-  const [optimizedGrids, setOptimizedGrids] = useState<Record<string, MapCell[][]> | null>(null);
-  const [optimizeMsg, setOptimizeMsg]       = useState<string | null>(null);
 
   // Local plan state — updated when user edits plants
   const [localPlan, setLocalPlan]       = useState(plan);
@@ -70,8 +68,6 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
     const newPlan = generatePlan(updatedProfile, localPlan.region);
     setLocalPlan(newPlan);
     savePlan(newPlan);
-    setOptimizedGrids(null);
-    setOptimizeMsg(null);
     setEditingPlants(false);
     setEditSaving(false);
   };
@@ -81,44 +77,9 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
     return ALL_PLANTS.filter(p => !editPlantIds.includes(p.id) && (q === "" || p.name.toLowerCase().includes(q)));
   }, [editSearch, editPlantIds]);
 
-  // ── Optimize layout ──────────────────────────────────────────────────────
-  const handleOptimize = () => {
-    const newGrids: Record<string, MapCell[][]> = {};
-    let totalBefore = 0;
-    let totalAfter  = 0;
-
-    const countConflicts = (g: MapCell[][]) =>
-      g.reduce((n, row) => n + row.filter(c => c.hasConflict).length, 0);
-
-    if (multiArea) {
-      for (const ap of localPlan.areaPlans) {
-        if (ap.selectedPlants.length === 0) continue;
-        totalBefore += countConflicts(ap.grid);
-        const opt = optimizeGridLayout(ap.grid, ap.area.lengthFt, ap.area.widthFt);
-        totalAfter  += countConflicts(opt);
-        newGrids[ap.area.id] = opt;
-      }
-    } else {
-      totalBefore = countConflicts(grid);
-      const opt = optimizeGridLayout(grid, profile.lengthFt, profile.widthFt);
-      totalAfter  = countConflicts(opt);
-      newGrids["primary"] = opt;
-    }
-
-    setOptimizedGrids(newGrids);
-
-    if (totalAfter === 0) {
-      setOptimizeMsg("All conflicts resolved! Your garden layout is now optimized.");
-    } else if (totalAfter < totalBefore) {
-      setOptimizeMsg(`Improved — ${totalAfter} conflict${totalAfter !== 1 ? "s" : ""} remaining. Some plant pairs may not be fully separable in this space.`);
-    } else {
-      setOptimizeMsg("Layout already as optimized as possible for these plants in this space.");
-    }
-  };
 
   // ── Get the current grid to render ──────────────────────────────────────
-  const getGrid = (areaId: string, fallback: MapCell[][]): MapCell[][] =>
-    optimizedGrids?.[areaId] ?? fallback;
+  const getGrid = (_areaId: string, fallback: MapCell[][]): MapCell[][] => fallback;
 
   // ── Download plan as Markdown ────────────────────────────────────────────
   const downloadPlan = () => {
@@ -307,7 +268,7 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
           />
 
           {/* Companion conflicts */}
-          {hasConflicts && !optimizeMsg && (
+          {hasConflicts && (
             <div className="bg-terracotta/10 border border-terracotta/20 p-4 rounded-2xl flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-terracotta shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
@@ -319,13 +280,6 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
             </div>
           )}
 
-          {/* Optimize result message */}
-          {optimizeMsg && (
-            <div className="bg-forest/8 border border-forest/15 p-4 rounded-2xl flex items-start gap-3">
-              <Wand2 className="w-5 h-5 text-forest/60 shrink-0 mt-0.5" />
-              <p className="text-xs text-forest/75 leading-relaxed">{optimizeMsg}</p>
-            </div>
-          )}
 
           {/* Garden map(s) */}
           {multiArea ? (
@@ -374,17 +328,6 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
             </div>
           )}
 
-          {/* Optimize layout button — shown when conflicts exist */}
-          {hasConflicts && (
-            <button
-              onClick={handleOptimize}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-forest/20 bg-forest/5 text-forest text-sm font-semibold hover:bg-forest/10 active:scale-[0.98] transition-all"
-              data-testid="btn-optimize"
-            >
-              <Wand2 className="w-4 h-4" />
-              Optimise Layout
-            </button>
-          )}
 
           {/* Caution notes */}
           {cautionNotes && cautionNotes.length > 0 && (
