@@ -366,7 +366,8 @@ export default function PlanPage({ plan, onStartOver }: PlanPageProps) {
 
         {/* ── PLANTS TAB ── */}
         <div className={`${activeTab === "plants" ? "block" : "hidden"} print:!block px-6 py-6 pb-8 space-y-6`}>
-          <PlantTimeline plants={selectedPlants} schedule={schedule} />
+          {/* PlantTimeline hidden until bar data is fixed */}
+          {/* <PlantTimeline plants={selectedPlants} schedule={schedule} /> */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <h2 className="font-serif text-xl font-semibold text-forest">Your Plants</h2>
