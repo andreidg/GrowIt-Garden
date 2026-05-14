@@ -1,0 +1,397 @@
+The GrowIt app is now essentially complete after several rounds of improvements. Please run a full final QA/QC audit across the entire app.
+
+Important instructions:
+- Do not rebuild the app from scratch.
+- Do not redesign the app.
+- Do not add new major features.
+- Do not change key product functionality.
+- Only fix clear bugs, broken flows, inconsistent copy, layout issues, build/typecheck failures, or issues that prevent the app from working correctly.
+- If something is subjective or not clearly broken, mark it as “Needs review” instead of changing it.
+
+Do not add:
+- authentication
+- payments
+- Supabase
+- Mixpanel
+- premium enforcement
+- live chat
+- Gemini video
+- pest diagnosis
+- e-commerce
+- admin dashboard
+- native mobile deployment
+
+QA/QC objective:
+Confirm that GrowIt is stable, demo-ready, and submission-ready. Test the full user experience and the recent improvements.
+
+Please first perform the QA audit and provide a checklist with:
+- Pass
+- Fail
+- Needs review
+
+Then fix only clear Fail items.
+
+Full QA/QC checklist:
+
+1. App launch and stability
+- App loads without blank screens.
+- No runtime crashes.
+- No major console errors during normal use.
+- Navigation works across all steps.
+- Back/next buttons work.
+- User can restart or create a new plan.
+
+2. Branding and positioning
+- App name is “GrowIt” everywhere.
+- No visible “GrowIt+” remains.
+- App is not branded as Calgary-only.
+- Calgary remains the default demo region only.
+- Other regions are selectable.
+
+3. Mobile-first layout
+Test at:
+- 390px width
+- 430px width
+- tablet width
+- desktop width
+
+Confirm:
+- no content is cut off
+- buttons are tappable
+- cards stack correctly
+- no unwanted page-level horizontal overflow
+- text is readable
+- garden map is usable
+- plant table is usable
+- PDF/download/share buttons remain accessible
+
+4. Landing page
+- Landing page looks polished.
+- Logo/wordmark is readable.
+- Main CTA works.
+- Copy explains the app clearly.
+- Product positioning is location-aware.
+- No broken buttons or links.
+
+5. Garden setup / Step 2
+- User can add and edit garden spaces.
+- Multiple garden areas work.
+- Each area has:
+  - name
+  - dimensions
+  - unit system
+  - sunlight level
+  - soil/container type
+- Imperial and metric units work.
+- 20ft x 20ft cap works.
+- approximately 6.1m x 6.1m cap works.
+- Cap warning appears with correct wording.
+- Unit switching does not corrupt dimensions.
+
+6. Photo scanner
+- Uploading a photo shows the image inside the scanner window.
+- Image preview appears immediately after upload.
+- Preview is contained and responsive.
+- Analysis/loading state appears.
+- Analysis dropdown/result panel appears.
+- Sunlight field updates after analysis.
+- Soil/container field updates after analysis.
+- Confidence labels appear:
+  - High
+  - Medium
+  - Low
+- Low confidence values ask the user to confirm or adjust.
+- Manual edits still work after analysis.
+- User can skip photo upload.
+- If analysis fails or API key is missing, uploaded photo still appears and manual entry remains usable.
+- Photo scanner does not estimate garden dimensions, pests, disease, exact plant identification, or property/location.
+
+7. Sunlight and soil options
+Sunlight options include:
+- Full sun
+- Part sun
+- Part shade
+- Full shade
+- Dappled shade
+
+Each sunlight option has useful explanatory text or tooltip.
+
+Soil/container options include:
+- Raised Bed
+- In-Ground Clay
+- In-Ground Loam
+- Container/Pots
+
+8. Plant categories
+Confirm all categories work:
+- Vegetables
+- Herbs
+- Flowers
+- Foliage & Ornamental Plants
+
+Check:
+- Category filters work.
+- Category labels are consistent.
+- Category styling is distinct.
+- Category appears in custom plant add/edit forms where applicable.
+- Foliage & Ornamental Plants uses the 🌿 icon where appropriate.
+- Existing categories were not renamed or broken.
+
+9. Custom Selection search
+- Search appears only in Custom Selection mode.
+- Search is hidden in non-custom garden goals.
+- Search is pill-shaped and mobile-friendly.
+- Placeholder reads “Search plants…”
+- Search icon appears on the left.
+- Clear ✕ button appears only when text is typed.
+- Clear ✕ button clears the input.
+- Search is case-insensitive.
+- Search filters across all categories regardless of active tab.
+- Search includes Vegetables, Herbs, Flowers, and Foliage & Ornamental Plants.
+- Existing selections remain selected even if hidden by search.
+- “No plants match your search.” appears when appropriate.
+- “No plants in this category suit your current garden conditions” is hidden while actively searching.
+
+Test:
+- Search “mar” → Marigolds appears.
+- Search “host” → Hostas appears.
+- Search “zzzzzz” → No plants match message appears.
+- Select a plant, search another term, clear search → original selection remains.
+
+10. Plant selection and recommendations
+- Users can manually select plants.
+- Users can multi-select plants.
+- “Pick My Plants” works per category:
+  - Vegetables
+  - Herbs
+  - Flowers
+  - Foliage & Ornamental Plants
+- Custom plant entry works.
+- Custom plants are clearly marked.
+- Custom plants do not break map or schedule generation.
+- Recommendation goals still work:
+  - Beginner-friendly
+  - Vegetable-focused
+  - Herbs & Flowers
+  - Pollinator-friendly
+  - Family / Kid-friendly
+  - Custom selection
+
+11. Custom Selection generation logic
+This is critical.
+
+When Garden Goal is “Custom selection”:
+- Selected plants are the source of truth.
+- The app must not generate a generic mixed garden.
+- The app must not auto-add unselected categories.
+- The app must not fill empty grid spaces with unselected plants.
+- Empty spaces may remain empty.
+- If only flowers are selected, only flowers appear.
+- If only foliage/ornamental plants are selected, only foliage/ornamental plants appear.
+- If only one plant is selected, only that plant appears, repeated or placed where appropriate.
+- If selected plants exceed available space, include what fits and show a friendly note if needed.
+- If no plants are selected, ask the user to select at least one plant or choose a recommended garden goal.
+
+Required test cases:
+A. Custom Selection → Pick My Plants under Flowers only → Generate.
+Expected: map/table/schedule show flowers only.
+
+B. Custom Selection → manually select only Marigolds → Generate.
+Expected: only Marigolds appear.
+
+C. Custom Selection → select Basil + Thyme + Marigolds.
+Expected: only those selected plants appear.
+
+D. Custom Selection → select only Hostas and Ferns.
+Expected: only Hostas and Ferns appear.
+
+E. Custom Selection → select nothing → Generate.
+Expected: user is prompted to select at least one plant or choose a recommended goal.
+
+F. Vegetable-focused mode → Generate without manual selection.
+Expected: recommendation logic still works normally.
+
+12. Plan generation
+- Plan generation works without requiring OpenAI.
+- Deterministic fallback works.
+- OpenAI, if available, enhances but does not block generation.
+- Plan generation works for:
+  - Calgary default
+  - another region
+  - imperial units
+  - metric units
+  - small garden
+  - multiple garden areas
+  - flowers-only
+  - foliage-only
+  - custom plant
+  - no photo uploaded
+  - full shade
+  - container garden
+
+13. Garden Map
+- Garden map renders correctly.
+- Garden grid is horizontally centered.
+- Garden grid is compact and not stuck to the left.
+- Grid wrapper fits tightly around content.
+- Plant cell spacing is compact but tappable.
+- Plant cells show:
+  - emoji/icon
+  - abbreviated plant name
+  - category styling
+- Category styling works for:
+  - vegetables
+  - herbs
+  - flowers
+  - foliage/ornamental plants
+- Tap/click plant details work if implemented.
+- No page-level horizontal overflow.
+
+14. Companion planting warnings removed
+- No “Companion Planting Notice” appears.
+- No warning triangles appear on plant cells.
+- Plant details do not mention:
+  - incompatible neighbours
+  - conflicts
+  - avoid plants
+  - bad neighbour warnings
+- Any companion logic may remain internal only, but it must not show conflict-related UI.
+
+15. Plant table under Garden Map
+- Table fits screen.
+- Mobile layout works.
+- If needed, table converts to stacked cards.
+- No unreadably small text.
+- No uncontrolled horizontal overflow.
+- Shows useful information:
+  - plant name
+  - category
+  - area
+  - action type
+  - spacing or notes
+
+16. Weekly schedule / calendar
+- Schedule renders correctly.
+- Current week is highlighted.
+- Empty weeks show exactly:
+  “No actions this week — just water and watch!”
+- Schedule works for vegetables, herbs, flowers, and foliage/ornamental plants.
+- Schedule works for multiple garden areas.
+- Schedule uses local frost dates.
+- Schedule remains readable on mobile.
+- Schedule cards do not break layout.
+
+17. Weather-risk card
+- Weather-risk card loads if available.
+- If weather API fails, show:
+  “Live weather is unavailable right now. Your plan still uses local frost-date guidance.”
+- Weather is advisory only.
+- Weather does not block plan generation.
+- Static frost-date table remains the planning baseline.
+
+18. Alert settings screen
+- Alert toggles work.
+- Toggle knob stays inside the track.
+- Off state moves knob left.
+- On state moves knob right.
+- Entire toggle is clickable/tappable.
+- Alert settings do not break the app if preview-only.
+
+19. Download Plan PDF
+- Download Plan generates a PDF, not Markdown.
+- PDF opens successfully.
+- PDF filename is user-friendly.
+- PDF includes:
+  - GrowIt title/header
+  - selected growing region
+  - unit system
+  - garden area summary
+  - selected plants grouped by category
+  - garden map or useful garden map summary
+  - plant table/list
+  - weekly schedule
+  - weather-risk notes if available
+  - custom plants if included
+  - generation date
+- PDF visually matches GrowIt branding.
+- PDF has proper margins.
+- Text is readable.
+- Schedule cards/sections do not get awkwardly cut off across pages.
+- Multi-page PDFs render cleanly.
+- If PDF generation fails, show:
+  “PDF download is unavailable right now. Please try again.”
+
+20. Share Plan
+- Share Plan works using Web Share API if supported.
+- If Web Share API is not supported, fallback copies summary to clipboard.
+- Clipboard fallback confirmation appears:
+  “Plan summary copied to clipboard.”
+- Share Plan was not broken by PDF changes.
+
+21. Storage and persistence
+- Generated plan persists on refresh if local/browser storage is implemented.
+- Restart/start-over option works.
+- Old stored data does not corrupt the app.
+- Invalid stored data is handled gracefully.
+
+22. Error and fallback states
+- Missing inputs show helpful validation.
+- API failures do not crash the app.
+- Photo analysis failure does not block the user.
+- Weather failure does not block the user.
+- OpenAI failure does not block the user.
+- PDF failure does not crash the app.
+- No raw stack traces or technical errors appear to users.
+
+23. Security and secrets
+- No API keys exposed in frontend code.
+- No secrets committed.
+- Environment variables are referenced safely.
+- README does not contain real secret values.
+
+24. Documentation sanity
+- README accurately reflects current functionality.
+- README includes the current app name: GrowIt.
+- README includes Foliage & Ornamental Plants if implemented.
+- README mentions PDF download if implemented.
+- Known limitations are accurate.
+- Course context is included.
+- MIT license exists.
+
+25. Technical checks
+Run available checks:
+- typecheck
+- build
+- lint, if available
+- app tests, if configured
+
+Check:
+- no broken imports
+- no build errors
+- no type errors
+- no obvious unused code causing failure
+- no out-of-scope features added
+
+Required final output:
+
+Before fixes:
+1. Provide a concise QA/QC checklist with Pass / Fail / Needs review.
+
+Then:
+2. Fix only clear Fail items.
+
+After fixes:
+3. Run typecheck/build again if available.
+4. Provide a final checklist confirming:
+   - app runs without errors
+   - no key features changed
+   - no new major features added
+   - Custom Selection works correctly
+   - Foliage & Ornamental Plants works correctly
+   - search works correctly
+   - garden map layout works
+   - PDF download works
+   - photo scanner works or fails gracefully
+   - weather works or fails gracefully
+   - README is accurate
+   - app is ready for final review and demo recording
