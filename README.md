@@ -2,6 +2,9 @@
 
 **A location-aware, mobile-first garden planning web app built for Alberta homeowners.**
 
+- **Live app:** https://sproutit.replit.app/
+- **Repository:** https://github.com/andreidg/SproutIt
+
 ---
 
 ## Product Description
@@ -42,7 +45,7 @@ The MVP is anchored in Alberta (Zone 3–4a, with a 100–120 frost-free-day sea
 | Garden map | Colour-coded grid (green = vegetable, gold = herb, pink = flower, sage = foliage & ornamental) with per-cell detail panel showing spacing, action type, days to maturity, and care notes |
 | Week-by-week schedule | Collapsible timeline from first indoor seed start to last fall frost, with current-week highlight |
 | AI-enhanced plan | Optional AI layer (OpenAI-compatible) refines plant selection and adds growing notes; deterministic fallback on any failure |
-| Photo scanner | Inline within each garden area card — tap "Scan my garden photo" to upload a JPG or PNG. The photo appears immediately as a full-width preview; the AI then estimates sunlight level and soil/container type with high / medium / low confidence labels, pre-fills the form fields, and shows a "Photo analysis" result panel. If analysis fails, the photo stays visible and manual entry is unaffected. |
+| Photo scanner (optional) | Inline within each garden area card — tap "Scan my garden photo" to upload a JPG or PNG. The photo appears immediately as a full-width preview; the AI then estimates sunlight level and soil/container type with high / medium / low confidence labels, pre-fills the form fields, and shows a "Photo analysis" result panel. **Requires an `OPENAI_API_KEY`**; when no key is configured the upload UI is hidden entirely and users fill sunlight and soil manually via the dropdowns. |
 | Weather risk card | Live 7-day forecast via Open-Meteo; surfaces frost risk, heat stress, heavy rain, and dry-spell advisories specific to your garden |
 | Resumable questionnaire | Back navigation moves one step at a time and preserves all answers; returning from the frost-confirmation screen restores Step 4 instead of restarting |
 | Alert preferences (preview) | Step 4 lets users preview which alerts they would like to receive; push notifications are scheduled for the next release |
@@ -51,6 +54,7 @@ The MVP is anchored in Alberta (Zone 3–4a, with a 100–120 frost-free-day sea
 | Print styling | All three plan tabs (Map, Schedule, Plants) visible in print; colour-accurate; A4 page margins |
 | No account required | Plans saved to `localStorage`; returning users see their last plan |
 | Optional account sync | Sign in with Replit to save your plan to your account so it follows you across devices and browsers. Guest plans are automatically migrated to your account on first login; if both a guest plan and an account plan exist, the app asks which one to keep. Sync failures show a non-blocking banner and the local plan stays usable. |
+| In-app sign-out | Once signed in, every screen past the landing page shows a forest-green strip at the top with "Signed in as [name] · Sign out" so users can switch accounts or return to the landing page without hunting for a menu. |
 
 ---
 
